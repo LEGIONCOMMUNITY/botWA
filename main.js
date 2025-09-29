@@ -1,5 +1,5 @@
 const {
-    MakeWASockets,
+    makeWASockets,
     useMultiFileAuthState,
     makeCacheableSignalKeyStore
 } = require("@whiskeysockets/baileys");
@@ -12,7 +12,7 @@ async function start() {
         state,
         saveCreds
     } = await useMultiFileAuthState("./session");
-    const varz = MakeWASockets({
+    const varz = makeWASockets({
         logger: P({ level: "silent" }),
         printQRInTerminal: false,
         auth: {
