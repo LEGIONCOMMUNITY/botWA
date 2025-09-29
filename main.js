@@ -15,7 +15,7 @@ async function startBot() {
     })
 
     if (!varz.authState.creds.registered) {
-        const phoneNumber = process.env.NUMBER || "" // nomor WA kamu
+        const phoneNumber = process.env.NUMBER || "6285184839249" // nomor WA kamu
         if (!phoneNumber) {
             console.log("❌ Masukkan nomor WA kamu (contoh: 628xxx)")
             process.exit(0)
