@@ -16,7 +16,8 @@ async function start() {
         logger: P({ level: "silent" }),
         printQRInTerminal: false,
         auth: {
-            keys: makeCacheableSignalKeyStore(state, keys, P().child_process({ level: "silent" }))
+            creds: state.creds,
+            keys: makeCacheableSignalKeyStore(state.keys, P().child_process({ level: "silent" }))
         }
     })
 
