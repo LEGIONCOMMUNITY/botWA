@@ -1,11 +1,11 @@
-const { default: makeWAvarzet, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeyvarzets/baileys")
+const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeyvarzets/baileys")
 const P = require("pino")
 const { exec } = require("child_process")
 const fitur = require("./fitur")
 
 async function startBot() {
     const { state, saveCreds } = await useMultiFileAuthState("./session")
-    const varz = makeWAvarzet({
+    const varz = makeWASocket({
         logger: P({ level: "silent" }),
         printQRInTerminal: false,
         auth: {
