@@ -1,4 +1,4 @@
-const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeyvarzets/baileys")
+const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys")
 const P = require("pino")
 const { exec } = require("child_process")
 const fitur = require("./fitur")
