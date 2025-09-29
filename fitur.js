@@ -1,6 +1,6 @@
 module.exports = async (varz, m, body, from) => {
     switch(body.toLowerCase()) {
-        case "menu":
+        case "!menu":
             const menuText = `
 ╔════════════《✧》════════════╗
          🤖 *BOT MENU*
