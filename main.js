@@ -17,7 +17,7 @@ async function start() {
         printQRInTerminal: false,
         auth: {
             creds: state.creds,
-            keys: makeCacheableSignalKeyStore(state.keys, P().child_process({ level: "silent" }))
+            keys: makeCacheableSignalKeyStore(state.keys, P().child({ level: "silent" }))
         }
     })
 
