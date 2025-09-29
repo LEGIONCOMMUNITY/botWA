@@ -24,6 +24,16 @@ async function startBot() {
         console.log("🔑 Pairing Code:", code)
     }
 
+    varz.ev.on("connection.update", (update) => {
+        const { connection, lastDisconnect } = update
+        if(connection === "close") {
+            console.log("Koneksi Terputus", lastDisconnect?.error);
+            startBot()
+        } else if(connection === "open") {
+            console.log("Bot behasil konek");
+        }
+    })
+
     varz.ev.on("creds.update", saveCreds)
 
     varz.ev.on("messages.upsert", async (msg) => {
