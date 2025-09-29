@@ -5,7 +5,7 @@ const {
 } = require("@whiskeysockets/baileys");
 const P = require("pino");
 const { exec } = require("child_process");
-const fitur = require("fitur.js");
+const fitur = require("./fitur.js");
 
 async function start() {
     const {
