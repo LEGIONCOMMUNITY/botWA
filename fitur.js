@@ -4,15 +4,20 @@ const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const { createMenu, createSimpleMenu } = require("./MENU/menuHandler");
 const StickerMaker = require("./MENU/stickerHandler");
 const { bot, display, getUptime } = require("./setting");
+let setting = require("./setting");
 
 const stickerMaker = new StickerMaker();
 const settingPath = path.join(__dirname, "setting.js");
 
 module.exports = async (sock, m, body, from) => {
-    const cmd = body.toLowerCase().trim();
     const args = cmd.split(/\s+/);
-    const prefix = bot.prefix;
-    const sender = m.sender || "";
+    const prefix = setting.prefix;
+    const cmd = body.startsWith(prefix) ? body.slice(prefix.length).trim().toLowerCase() : null;
+    if (!cmd) return;
+
+    const sender = m.key.participant || m.key.remoteJid;
+    const isOwner = sender.replace(/[^0-9]/g, '') === setting.ownerNumber.replace(/[^0-9]/g, '');
+
 
     try {
         switch (true) {
@@ -101,19 +106,28 @@ module.exports = async (sock, m, body, from) => {
                 break;
 
             // ========== UBAH PREFIX (OWNER SAJA) ==========
-            case cmd.startsWith(`${prefix}setprefix`): {
-                if (!sender.includes(bot.ownerNumber))
-                    return sock.sendMessage(from, { text: "❌ Hanya owner yang bisa ubah prefix!" }, { quoted: m });
+            case cmd.startsWith("setprefix"): {
+                if (!isOwner) {
+                    await sock.sendMessage(from, { text: "❌ Hanya owner yang dapat mengubah prefix!" }, { quoted: m });
+                    return;
+                }
 
+                const args = cmd.split(" ");
                 const newPrefix = args[1];
-                if (!newPrefix)
-                    return sock.sendMessage(from, { text: `⚙️ Format: ${prefix}setprefix [prefix baru]\nContoh: ${prefix}setprefix ?` }, { quoted: m });
+                if (!newPrefix) {
+                    await sock.sendMessage(from, { text: `⚙️ *Cara pakai:*\n${prefix}setprefix [prefix baru]\n\nContoh: ${prefix}setprefix ?` }, { quoted: m });
+                    return;
+                }
 
-                let file = fs.readFileSync(settingPath, "utf8");
-                file = file.replace(/prefix:\s*["'`].*?["'`]/, `prefix: "${newPrefix}"`);
-                fs.writeFileSync(settingPath, file, "utf8");
+                // Update di memori
+                setting.prefix = newPrefix;
 
-                await sock.sendMessage(from, { text: `✅ Prefix berhasil diubah!\nDari *${bot.prefix}* ➜ Ke *${newPrefix}*` }, { quoted: m });
+                // Update di file setting.js
+                let settingData = fs.readFileSync(settingPath, "utf8");
+                settingData = settingData.replace(/prefix:\s*['"`].*?['"`]/, `prefix: '${newPrefix}'`);
+                fs.writeFileSync(settingPath, settingData);
+
+                await sock.sendMessage(from, { text: `✅ Prefix berhasil diubah menjadi: *${newPrefix}*` }, { quoted: m });
                 break;
             }
 
