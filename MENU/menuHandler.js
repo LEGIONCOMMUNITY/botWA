@@ -1,6 +1,42 @@
+const os = require('os');
+const { performance } = require('perf_hooks');
 const { makeTextDraw } = require('./textDraw');
 
+function formatUptime(seconds) {
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor((seconds % (3600 * 24)) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    return `${d}d ${h}h ${m}m ${s}s`;
+}
+
+function getIntroInfo() {
+    // Simulasi data status bot
+    const start = performance.now();
+    const end = performance.now();
+    const speed = (end - start).toFixed(2);
+
+    const uptime = formatUptime(process.uptime());
+    const aiStatus = "✅ Aktif";
+    const date = new Date().toLocaleString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+    });
+
+    return [
+        `📅 Tanggal: ${date}`,
+        `⚡ Speed: ${speed} ms`,
+        `🕒 Uptime: ${uptime}`,
+        `🤖 AI Status: ${aiStatus}`,
+        `💻 Platform: ${os.platform()}`
+    ];
+}
+
 function createMenu() {
+    const introInfo = getIntroInfo();
+
     const menuSections = [
         {
             title: "🎨 STICKER MENU",
@@ -94,15 +130,20 @@ function createMenu() {
     ];
 
     let fullMenu = "";
-    
-    menuSections.forEach((section, index) => {
+
+    // Tambahkan intro di bagian paling atas
+    const introBox = makeTextDraw("🤖 BOT STATUS", introInfo, { padding: 1, maxWidth: 45 });
+    fullMenu += introBox + "\n\n";
+
+    // Tambahkan menu utama
+    menuSections.forEach(section => {
         const sectionBox = makeTextDraw(section.title, section.items, { padding: 1, maxWidth: 45 });
         fullMenu += sectionBox + "\n\n";
     });
 
-    const footer = `✨ *Semoga harimu menyenangkan* 🥰`;
-    
-    return "```" + fullMenu + "```" + "\n" + footer;
+    const footer = `✨ *Semoga harimu menyenangkan!* 🥰`;
+
+    return "```" + fullMenu.trim() + "```" + "\n" + footer;
 }
 
 function createSimpleMenu() {
@@ -114,7 +155,7 @@ function createSimpleMenu() {
         "!owner - Info pembuat",
         "!help - Bantuan"
     ];
-    
+
     const box = makeTextDraw("🎯 QUICK MENU", simpleItems, { padding: 1, maxWidth: 40 });
     return "```" + box + "```";
 }
