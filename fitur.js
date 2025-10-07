@@ -10,10 +10,10 @@ const settingPath = path.join(__dirname, "setting.js");
 
 module.exports = async (sock, m, body, from) => {
     try {
-        // Pastikan prefix dan command kebaca benar
-        const prefix = setting.prefix;
+        const prefix = setting.prefix || "!"; // fallback
         if (!body.startsWith(prefix)) return;
 
+        // Ambil command & argumen
         const cmdBody = body.slice(prefix.length).trim();
         const [command, ...args] = cmdBody.split(/\s+/);
         const cmd = command.toLowerCase();
@@ -23,24 +23,24 @@ module.exports = async (sock, m, body, from) => {
         const ownerNum = setting.ownerNumber.replace(/[^0-9]/g, "");
         const isOwner = senderNum === ownerNum;
 
-        switch (true) {
+        switch (cmd) {
 
-            // ===== MENU =====
-            case cmd === "menu":
-            case cmd === "help":
-            case cmd === "start":
+            // ========== MENU ==========
+            case "menu":
+            case "help":
+            case "start":
                 await sock.sendMessage(from, { text: createMenu() }, { quoted: m });
                 break;
 
-            // ===== INFO OWNER =====
-            case cmd === "owner":
+            // ========== INFO OWNER ==========
+            case "owner":
                 await sock.sendMessage(from, {
                     text: `👑 *OWNER BOT*\n\n📞 *Nomor*: ${bot.ownerNumber}\n💻 *Platform*: ${bot.platform}\n⚡ *Version*: ${bot.version}`,
                 }, { quoted: m });
                 break;
 
-            // ===== INFO BOT =====
-            case cmd === "infobot":
+            // ========== INFO BOT ==========
+            case "infobot": {
                 const uptime = getUptime();
                 const info = `
 ╭━━━〔 🤖 *${bot.name}* 〕━━━╮
@@ -52,37 +52,39 @@ module.exports = async (sock, m, body, from) => {
 ╰━━━━━━━━━━━━━━━━━━━━━━╯`;
                 await sock.sendMessage(from, { text: info }, { quoted: m });
                 break;
+            }
 
-            // ===== PING =====
-            case cmd === "ping":
+            // ========== PING ==========
+            case "ping": {
                 const start = Date.now();
-                await sock.sendMessage(from, { text: "🏓 Testing ping..." }, { quoted: m });
+                const sent = await sock.sendMessage(from, { text: "🏓 Testing ping..." }, { quoted: m });
                 const latency = Date.now() - start;
                 await sock.sendMessage(from, {
                     text: `✨ *PONG!*\n\n⨳ *Speed*: ${latency} ms\n⨳ *Runtime*: ${process.uptime().toFixed(2)}s\n⨳ *Status*: Active ✅`,
                 }, { quoted: m });
                 break;
+            }
 
-            // ===== STIKER =====
-            case cmd === "stiker":
-            case cmd === "s":
+            // ========== STIKER ==========
+            case "stiker":
+            case "s":
                 await handleSticker(sock, m, from);
                 break;
 
-            // ===== STIKER TEKS =====
-            case cmd === "stikertxt":
-            case cmd === "textsticker":
+            // ========== STIKER TEKS ==========
+            case "stikertxt":
+            case "textsticker": {
                 const text = args.join(" ");
-                if (!text) {
-                    await sock.sendMessage(from, { text: `📝 *Contoh:* ${prefix}stikertxt Halo Dunia` }, { quoted: m });
-                    return;
-                }
+                if (!text)
+                    return sock.sendMessage(from, { text: `📝 Contoh: ${prefix}stikertxt Halo Dunia` }, { quoted: m });
+
                 await handleTextSticker(sock, m, from, text);
                 break;
+            }
 
-            // ===== TAKE STIKER =====
-            case cmd === "take":
-            case cmd === "steal":
+            // ========== TAKE STIKER ==========
+            case "take":
+            case "steal":
                 if (m.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
                     await handleQuotedSticker(sock, m, from);
                 } else {
@@ -90,27 +92,24 @@ module.exports = async (sock, m, body, from) => {
                 }
                 break;
 
-            // ===== RUNTIME =====
-            case cmd === "runtime":
+            // ========== RUNTIME ==========
+            case "runtime": {
                 const up = process.uptime();
                 const h = Math.floor(up / 3600);
                 const mnt = Math.floor((up % 3600) / 60);
                 const s = Math.floor(up % 60);
                 await sock.sendMessage(from, { text: `⏰ Runtime: ${h} jam ${mnt} menit ${s} detik` }, { quoted: m });
                 break;
+            }
 
-            // ===== UBAH PREFIX =====
-            case cmd === "setprefix":
-                if (!isOwner) {
-                    await sock.sendMessage(from, { text: "❌ Hanya owner yang dapat mengubah prefix!" }, { quoted: m });
-                    return;
-                }
+            // ========== UBAH PREFIX ==========
+            case "setprefix": {
+                if (!isOwner)
+                    return sock.sendMessage(from, { text: "❌ Hanya owner yang dapat mengubah prefix!" }, { quoted: m });
 
                 const newPrefix = args[0];
-                if (!newPrefix) {
-                    await sock.sendMessage(from, { text: `⚙️ *Contoh:* ${prefix}setprefix ?` }, { quoted: m });
-                    return;
-                }
+                if (!newPrefix)
+                    return sock.sendMessage(from, { text: `⚙️ Contoh: ${prefix}setprefix ?` }, { quoted: m });
 
                 setting.prefix = newPrefix;
                 let file = fs.readFileSync(settingPath, "utf8");
@@ -119,41 +118,42 @@ module.exports = async (sock, m, body, from) => {
 
                 await sock.sendMessage(from, { text: `✅ Prefix berhasil diubah ke *${newPrefix}*` }, { quoted: m });
                 break;
+            }
 
-            // ===== LIHAT PREFIX =====
-            case cmd === "prefix":
+            // ========== LIHAT PREFIX ==========
+            case "prefix":
                 await sock.sendMessage(from, { text: `🔹 Prefix saat ini: *${setting.prefix}*` }, { quoted: m });
                 break;
 
-            // ===== RESET PREFIX =====
-            case cmd === "resetprefix":
-                if (!isOwner) {
-                    await sock.sendMessage(from, { text: "❌ Hanya owner yang dapat reset prefix!" }, { quoted: m });
-                    return;
-                }
+            // ========== RESET PREFIX ==========
+            case "resetprefix": {
+                if (!isOwner)
+                    return sock.sendMessage(from, { text: "❌ Hanya owner yang dapat reset prefix!" }, { quoted: m });
 
                 setting.prefix = "!";
                 let resetFile = fs.readFileSync(settingPath, "utf8");
                 resetFile = resetFile.replace(/prefix:\s*['"`].*?['"`]/, `prefix: '!'`);
                 fs.writeFileSync(settingPath, resetFile, "utf8");
 
-                await sock.sendMessage(from, { text: `🔄 Prefix berhasil direset ke default: *!*` }, { quoted: m });
+                await sock.sendMessage(from, { text: `🔄 Prefix direset ke default: *!*` }, { quoted: m });
                 break;
+            }
 
-            // ===== COMMAND TIDAK DIKENAL =====
+            // ========== COMMAND TIDAK DIKENAL ==========
             default:
                 await sock.sendMessage(from, {
                     text: `❌ Command *${body}* tidak dikenali.\n\n${createSimpleMenu()}`,
                 }, { quoted: m });
                 break;
         }
+
     } catch (err) {
         console.error("❌ Error Handler:", err);
         await sock.sendMessage(from, { text: `Terjadi error: ${err.message}` }, { quoted: m });
     }
 };
 
-// ====== HANDLER TAMBAHAN ======
+// ========== HANDLER TAMBAHAN ==========
 
 async function handleSticker(sock, m, from) {
     if (m.message.imageMessage || m.message.videoMessage) {
