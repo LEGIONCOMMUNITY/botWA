@@ -11,7 +11,7 @@ module.exports = async (sock, m, body, from) => {
     const command = args.shift().toLowerCase();
     
     try {
-        switch (cmd) {
+        switch (command) {
             // 📜 MENU
             case `${bot.prefix}menu`:
             case `${bot.prefix}help`:
