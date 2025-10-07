@@ -1,134 +1,125 @@
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
-
-// Buat folder temp jika belum ada
-if (!fs.existsSync('./temp')) {
-    fs.existsSync('./temp');
-}
 
 class StickerMaker {
     constructor() {
-        this.tempDir = './temp';
+        this.tempDir = path.resolve('./temp');
+
+        // Buat folder temp kalau belum ada
+        if (!fs.existsSync(this.tempDir)) {
+            fs.mkdirSync(this.tempDir, { recursive: true });
+        }
     }
 
-    // Download media dari URL WhatsApp
+    // Jalankan command shell (FFmpeg)
+    runCommand(command) {
+        return new Promise((resolve, reject) => {
+            exec(command, (error, stdout, stderr) => {
+                if (error) return reject(stderr || error);
+                resolve(stdout);
+            });
+        });
+    }
+
+    // Download media dari URL ke file lokal
     async downloadMedia(mediaUrl, filename) {
-        return new Promise((resolve, reject) => {
-            const outputPath = path.join(this.tempDir, filename);
-            
-            const ffmpegCommand = `ffmpeg -i "${mediaUrl}" -y ${outputPath}`;
-            
-            exec(ffmpegCommand, (error, stdout, stderr) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(outputPath);
-            });
-        });
+        const filePath = path.join(this.tempDir, filename);
+
+        // Gunakan curl supaya stabil untuk URL langsung dari WhatsApp
+        const command = `curl -L -o "${filePath}" "${mediaUrl}"`;
+
+        try {
+            await this.runCommand(command);
+            return filePath;
+        } catch (err) {
+            throw new Error(`Gagal download media: ${err}`);
+        }
     }
 
-    // Convert gambar ke stiker WebP
+    // Convert gambar → WebP
     async imageToSticker(inputPath, outputPath) {
-        return new Promise((resolve, reject) => {
-            const ffmpegCommand = `ffmpeg -i "${inputPath}" -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" -y ${outputPath}`;
-            
-            exec(ffmpegCommand, (error, stdout, stderr) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(outputPath);
-            });
-        });
+        const command = `
+            ffmpeg -i "${inputPath}" \
+            -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,\
+            format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" \
+            -y "${outputPath}"
+        `;
+        await this.runCommand(command);
+        return outputPath;
     }
 
-    // Convert video ke stiker WebP
+    // Convert video → WebP (max 7 detik)
     async videoToSticker(inputPath, outputPath) {
-        return new Promise((resolve, reject) => {
-            const ffmpegCommand = `ffmpeg -i "${inputPath}" -t 7 -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000,fps=15" -y ${outputPath}`;
-            
-            exec(ffmpegCommand, (error, stdout, stderr) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve(outputPath);
-            });
-        });
+        const command = `
+            ffmpeg -i "${inputPath}" -t 7 \
+            -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,\
+            format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000,fps=15" \
+            -loop 0 -an -vsync 0 -y "${outputPath}"
+        `;
+        await this.runCommand(command);
+        return outputPath;
     }
 
     // Buat stiker dari media WhatsApp
     async createSticker(media, mediaType) {
+        let inputPath, outputPath;
         try {
-            const mediaUrl = media.url;
             const timestamp = Date.now();
-            const inputFilename = `input_${timestamp}.${mediaType === 'image' ? 'jpg' : 'mp4'}`;
+            const inputExt = mediaType === 'image' ? 'jpg' : 'mp4';
+            const inputFilename = `input_${timestamp}.${inputExt}`;
             const outputFilename = `sticker_${timestamp}.webp`;
-            
-            const inputPath = path.join(this.tempDir, inputFilename);
-            const outputPath = path.join(this.tempDir, outputFilename);
 
-            // Download media
-            console.log('Downloading media...');
-            await this.downloadMedia(mediaUrl, inputFilename);
+            inputPath = path.join(this.tempDir, inputFilename);
+            outputPath = path.join(this.tempDir, outputFilename);
 
-            // Convert ke stiker
-            console.log('Converting to sticker...');
+            console.log('📥 Downloading media...');
+            await this.downloadMedia(media.url, inputFilename);
+
+            console.log('🎨 Converting to sticker...');
             if (mediaType === 'image') {
                 await this.imageToSticker(inputPath, outputPath);
             } else {
                 await this.videoToSticker(inputPath, outputPath);
             }
 
-            // Baca file stiker
             const stickerBuffer = fs.readFileSync(outputPath);
-
-            // Bersihkan file temp
             this.cleanupFiles([inputPath, outputPath]);
-
             return stickerBuffer;
-
-        } catch (error) {
-            // Pastikan cleanup meski error
-            this.cleanupFiles([inputPath, outputPath].filter(fs.existsSync));
-            throw error;
+        } catch (err) {
+            this.cleanupFiles([inputPath, outputPath]);
+            throw new Error(`❌ Gagal membuat stiker: ${err.message}`);
         }
     }
 
-    // Hapus file temporary
-    cleanupFiles(filePaths) {
-        filePaths.forEach(filePath => {
-            if (fs.existsSync(filePath)) {
-                try {
-                    fs.unlinkSync(filePath);
-                } catch (err) {
-                    console.log('Error deleting temp file:', err);
-                }
-            }
-        });
+    // Buat stiker dari teks
+    async textToSticker(text) {
+        const outputPath = path.join(this.tempDir, `text_${Date.now()}.webp`);
+        const safeText = text.replace(/['"]/g, ''); // hindari error FFmpeg
+        const command = `
+            ffmpeg -f lavfi -i color=size=512x512:rate=25:color=black \
+            -vf "drawtext=text='${safeText}':fontcolor=white:fontsize=48:\
+            x=(w-text_w)/2:y=(h-text_h)/2" \
+            -frames:v 1 -y "${outputPath}"
+        `;
+        await this.runCommand(command);
+
+        const stickerBuffer = fs.readFileSync(outputPath);
+        this.cleanupFiles([outputPath]);
+        return stickerBuffer;
     }
 
-    // Buat stiker dari teks (bonus feature)
-    async textToSticker(text) {
-        return new Promise((resolve, reject) => {
-            const outputPath = path.join(this.tempDir, `text_sticker_${Date.now()}.webp`);
-            
-            const ffmpegCommand = `ffmpeg -f lavfi -i color=size=512x512:rate=25:color=random -vf "drawtext=text='${text}':fontcolor=white:fontsize=40:x=(w-text_w)/2:y=(h-text_h)/2" -t 3 -y ${outputPath}`;
-            
-            exec(ffmpegCommand, (error, stdout, stderr) => {
-                if (error) {
-                    reject(error);
-                    return;
+    // Bersihkan file sementara
+    cleanupFiles(files) {
+        for (const file of files) {
+            if (file && fs.existsSync(file)) {
+                try {
+                    fs.unlinkSync(file);
+                } catch (err) {
+                    console.warn(`⚠️ Gagal hapus file ${file}:`, err.message);
                 }
-                
-                const stickerBuffer = fs.readFileSync(outputPath);
-                this.cleanupFiles([outputPath]);
-                resolve(stickerBuffer);
-            });
-        });
+            }
+        }
     }
 }
 
