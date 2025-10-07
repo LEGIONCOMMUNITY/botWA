@@ -10,89 +10,88 @@ class StickerMaker {
         }
     }
 
-    // Jalankan command shell dengan logging aman
     runCommand(command) {
         return new Promise((resolve, reject) => {
             exec(command, (error, stdout, stderr) => {
-                if (error) {
-                    return reject(
-                        new Error(stderr.trim() || error.message || 'Command gagal dijalankan')
-                    );
-                }
-                resolve(stdout.trim());
+                if (error) return reject(new Error(stderr || stdout || error.message));
+                resolve(stdout);
             });
         });
     }
 
-    // Download media dengan curl
+    async getFileType(filePath) {
+        try {
+            const stdout = await this.runCommand(`file -b "${filePath}"`);
+            return stdout.trim();
+        } catch {
+            return "unknown";
+        }
+    }
+
     async downloadMedia(mediaUrl, filename) {
         const filePath = path.join(this.tempDir, filename);
         const command = `curl -L -s -o "${filePath}" "${mediaUrl}"`;
 
-        try {
-            await this.runCommand(command);
-            if (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
-                throw new Error('File hasil download kosong');
-            }
-            return filePath;
-        } catch (err) {
-            throw new Error(`Gagal download media: ${err.message}`);
+        await this.runCommand(command);
+
+        if (!fs.existsSync(filePath) || fs.statSync(filePath).size === 0) {
+            throw new Error("File download kosong / tidak valid");
         }
+
+        const type = await this.getFileType(filePath);
+        if (!/(image|video)/i.test(type)) {
+            throw new Error(`File bukan gambar/video valid (${type})`);
+        }
+
+        return filePath;
     }
 
-    // Convert gambar ke WebP
     async imageToSticker(inputPath, outputPath) {
-        const command = `ffmpeg -i "${inputPath}" -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" -y "${outputPath}"`;
+        const command = `ffmpeg -y -hide_banner -loglevel error -i "${inputPath}" -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000" "${outputPath}"`;
         await this.runCommand(command);
-        if (!fs.existsSync(outputPath)) throw new Error('Gagal membuat file WebP dari gambar');
+        if (!fs.existsSync(outputPath)) throw new Error("Gagal konversi gambar ke WebP");
         return outputPath;
     }
 
-    // Convert video ke WebP (max 7 detik)
     async videoToSticker(inputPath, outputPath) {
-        const command = `ffmpeg -i "${inputPath}" -t 7 -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000,fps=15" -loop 0 -an -vsync 0 -y "${outputPath}"`;
+        const command = `ffmpeg -y -hide_banner -loglevel error -i "${inputPath}" -t 7 -vf "scale=512:512:flags=lanczos:force_original_aspect_ratio=decrease,format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000,fps=15" -loop 0 -an -vsync 0 "${outputPath}"`;
         await this.runCommand(command);
-        if (!fs.existsSync(outputPath)) throw new Error('Gagal membuat file WebP dari video');
+        if (!fs.existsSync(outputPath)) throw new Error("Gagal konversi video ke WebP");
         return outputPath;
     }
 
-    // Fungsi utama bikin stiker
     async createSticker(media, mediaType) {
         let inputPath, outputPath;
         try {
-            if (!media || !media.url) throw new Error('Media URL tidak valid');
+            if (!media || !media.url) throw new Error("Media URL tidak valid");
             if (!['image', 'video'].includes(mediaType))
                 throw new Error(`Tipe media tidak dikenal: ${mediaType}`);
 
             const timestamp = Date.now();
             const inputExt = mediaType === 'image' ? 'jpg' : 'mp4';
-            const inputFilename = `input_${timestamp}.${inputExt}`;
-            const outputFilename = `sticker_${timestamp}.webp`;
+            inputPath = path.join(this.tempDir, `input_${timestamp}.${inputExt}`);
+            outputPath = path.join(this.tempDir, `sticker_${timestamp}.webp`);
 
-            inputPath = path.join(this.tempDir, inputFilename);
-            outputPath = path.join(this.tempDir, outputFilename);
+            console.log("📥 Mengunduh media...");
+            await this.downloadMedia(media.url, path.basename(inputPath));
 
-            console.log('📥 Mengunduh media...');
-            await this.downloadMedia(media.url, inputFilename);
-
-            console.log('🎨 Mengonversi ke stiker...');
+            console.log("🎨 Mengonversi ke stiker...");
             if (mediaType === 'image') {
                 await this.imageToSticker(inputPath, outputPath);
             } else {
                 await this.videoToSticker(inputPath, outputPath);
             }
 
-            console.log('✅ Stiker berhasil dibuat!');
+            console.log("✅ Stiker berhasil dibuat!");
             const stickerBuffer = fs.readFileSync(outputPath);
             this.cleanupFiles([inputPath, outputPath]);
             return stickerBuffer;
         } catch (err) {
             this.cleanupFiles([inputPath, outputPath]);
-            throw new Error(`❌ Gagal membuat stiker: ${err?.message || err}`);
+            throw new Error(`❌ Gagal membuat stiker: ${err.message}`);
         }
     }
 
-    // Buat stiker dari teks
     async textToSticker(text) {
         const outputPath = path.join(this.tempDir, `text_${Date.now()}.webp`);
         const safeText = (text || '').replace(/['"]/g, '');
@@ -104,7 +103,6 @@ class StickerMaker {
         return stickerBuffer;
     }
 
-    // Hapus file sementara
     cleanupFiles(files) {
         for (const file of files) {
             if (file && fs.existsSync(file)) {
