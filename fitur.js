@@ -7,10 +7,8 @@ const stickerMaker = new StickerMaker();
 
 module.exports = async (sock, m, body, from) => {
     const cmd = body.toLowerCase().trim();
-
+    const bot = setting;
     try {
-        const bot = setting;
-
         switch (cmd) {
             // 📜 MENU
             case `${bot.prefix}menu`:
