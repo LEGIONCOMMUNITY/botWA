@@ -1,4 +1,5 @@
-const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys")
+const { default: makeWASocket, makeCacheableSignalKeyStore } = require("@whiskeysockets/baileys");
+const { downloadMediaMessage, useMultiFileAuthState } = require("@whiskeysockets/baileys");
 const P = require("pino")
 const readline = require("readline")
 const fitur = require("./fitur")

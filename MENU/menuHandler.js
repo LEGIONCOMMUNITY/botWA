@@ -104,7 +104,7 @@ function createMenu() {
 
     const footer = `✨ *Semoga harimu menyenangkan* 🥰`;
     
-    return "```" + fullMenu + "```" + "\n" + footer;
+    return "" + fullMenu + "" + "\n" + footer;
 }
 
 function createSimpleMenu() {

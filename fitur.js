@@ -53,9 +53,25 @@ module.exports = async(sock, m, body, from) => {
 
             case "!stiker":
             case "!s":
-            case "!sticker":
-                await handleSticker(sock, m, from);
+            case '!s': {
+                await sock.sendMessage(from, { text: '⏳ Sedang membuat stiker...' }, { quoted: msg });
+    
+                let mediaType = null;
+                if (msg.message.imageMessage) mediaType = 'image';
+                else if (msg.message.videoMessage) mediaType = 'video';
+    
+                if (!mediaType) {
+                    return sock.sendMessage(from, { text: '❌ Kirim gambar/video dengan caption !s' }, { quoted: msg });
+                }
+                try {
+                    const stickerBuffer = await stickerMaker.createSticker(msg, mediaType, sock, downloadMediaMessage);
+                    await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: msg });
+                } catch (err) {
+                    console.error(err);
+                    await sock.sendMessage(from, { text: `❌ Gagal membuat stiker:\n${err.message}` }, { quoted: msg });
+                }
                 break;
+            }
 
             case "!stikertxt":
             case "!textsticker":
