@@ -54,21 +54,21 @@ module.exports = async(sock, m, body, from) => {
             case "!stiker":
             case "!s":
             case '!s': {
-                await sock.sendMessage(from, { text: '⏳ Sedang membuat stiker...' }, { quoted: msg });
+                await sock.sendMessage(from, { text: '⏳ Sedang membuat stiker...' }, { quoted: m });
     
                 let mediaType = null;
-                if (msg.message.imageMessage) mediaType = 'image';
-                else if (msg.message.videoMessage) mediaType = 'video';
+                if (m.message.imageMessage) mediaType = 'image';
+                else if (m.message.videoMessage) mediaType = 'video';
     
                 if (!mediaType) {
-                    return sock.sendMessage(from, { text: '❌ Kirim gambar/video dengan caption !s' }, { quoted: msg });
+                    return sock.sendMessage(from, { text: '❌ Kirim gambar/video dengan caption !s' }, { quoted: m });
                 }
                 try {
-                    const stickerBuffer = await stickerMaker.createSticker(msg, mediaType, sock, downloadMediaMessage);
-                    await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: msg });
+                    const stickerBuffer = await stickerMaker.createSticker(m, mediaType, sock, downloadMediaMessage);
+                    await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
                 } catch (err) {
                     console.error(err);
-                    await sock.sendMessage(from, { text: `❌ Gagal membuat stiker:\n${err.message}` }, { quoted: msg });
+                    await sock.sendMessage(from, { text: `❌ Gagal membuat stiker:\n${err.message}` }, { quoted: m });
                 }
                 break;
             }
