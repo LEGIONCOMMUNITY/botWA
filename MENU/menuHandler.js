@@ -1,125 +1,93 @@
 const { makeTextDraw } = require('./textDraw');
 
 function createMenu() {
-    const menuSections = [
-        {
-            title: "🎨 STICKER MENU",
-            items: [
-                "!stiker - Buat stiker dari gambar",
-                "!s - Shortcut !stiker", 
-                "!sticker - Buat stiker dari video",
-                "!stikertxt [teks] - Stiker dari teks",
-                "!take - Steal stiker (reply)"
-            ]
-        },
-        {
-            title: "🌟 BOT INFO",
-            items: [
-                "!ping - Cek status bot",
-                "!runtime - Lihat waktu aktif", 
-                "!speedtest - Test kecepatan",
-                "!owner - Info pembuat bot"
-            ]
-        },
-        {
-            title: "🔍 SEARCH MENU", 
-            items: [
-                "!ytsearch - Cari di YouTube",
-                "!pinterest - Cari gambar",
-                "!wallpaper - Wallpaper HD",
-                "!playstore - Cari app"
-            ]
-        },
-        {
-            title: "📥 DOWNLOAD MENU",
-            items: [
-                "!ytaudio - Download audio YouTube",
-                "!ytvideo - Download video YouTube", 
-                "!tiktok - Download TikTok",
-                "!instagram - Download IG"
-            ]
-        },
-        {
-            title: "🛠️ CONVERTER/TOOLS",
-            items: [
-                "!toimage - Stiker ke gambar",
-                "!toaudio - Video ke audio", 
-                "!tourl - Media ke URL",
-                "!ssweb - Screenshot web"
-            ]
-        },
-        {
-            title: "🎮 GAME MENU",
-            items: [
-                "!tebakgambar - Game tebak gambar",
-                "!tebakkata - Game tebak kata",
-                "!suit - Game suit",
-                "!tebakbendera - Tebak bendera"
-            ]
-        },
-        {
-            title: "😄 FUN MENU", 
-            items: [
-                "!joke - Cerita lucu",
-                "!faktaunik - Fakta menarik",
-                "!quotes - Kutipan inspirasi", 
-                "!rate - Rate sesuatu"
-            ]
-        },
-        {
-            title: "🤖 AI MENU",
-            items: [
-                "!gpt - Chat dengan AI", 
-                "!gemini - AI Google",
-                "!dalle - Generate gambar AI",
-                "!ai - AI assistant"
-            ]
-        },
-        {
-            title: "📊 GROUP MENU",
-            items: [
-                "!groupinfo - Info grup",
-                "!linkgc - Link grup", 
-                "!tagall - Tag semua member",
-                "!hidetag - Tag diam-diam"
-            ]
-        },
-        {
-            title: "⚙️ OTHERS MENU",
-            items: [
-                "!menu - Tampilkan menu ini",
-                "!help - Bantuan",
-                "!infobot - Info bot", 
-                "!donasi - Support bot"
-            ]
-        }
-    ];
+    return `
+╭━━━〔 ✨ We-Bot AI 〕━━━╮
+┃ 📅 Tanggal : Selasa, 7 Oktober 2025
+┃ ⚡ Speed   : 0.00 ms
+┃ 🕒 Uptime  : 0d 0h 0m 11s
+┃ 🤖 AI Mode : Aktif ✅
+┃ 💻 Platform: android
+╰━━━━━━━━━━━━━━━━━━━━━━╯
 
-    let fullMenu = "";
-    
-    menuSections.forEach((section) => {
-        const sectionBox = makeTextDraw(section.title, section.items, { padding: 1, maxWidth: 45 });
-        fullMenu += sectionBox + "\n\n";
-    });
+╭─🎨 *STICKER MENU* ───
+│ • !stiker — Gambar ke stiker
+│ • !s — Shortcut stiker
+│ • !sticker — Video ke stiker
+╰───────────────────────
 
-    const footer = `✨ *Semoga harimu menyenangkan* 🥰`;
-    
-    return "" + fullMenu + "" + "\n" + footer;
+╭─🌟 *BOT INFO* ───────
+│ • !ping — Cek status
+│ • !runtime — Waktu aktif
+│ • !speedtest — Tes kecepatan
+│ • !owner — Info pembuat
+╰───────────────────────
+
+╭─🔍 *SEARCH MENU* ────
+│ • !ytsearch — Cari YouTube
+│ • !pinterest — Gambar random
+│ • !wallpaper — Wallpaper HD
+│ • !playstore — Cari aplikasi
+╰───────────────────────
+
+╭─📥 *DOWNLOAD MENU* ─
+│ • !ytaudio — Audio YouTube
+│ • !ytvideo — Video YouTube
+│ • !tiktok — Download TikTok
+│ • !instagram — Download IG
+╰───────────────────────
+
+╭─🛠️ *TOOLS / CONVERTER* ─
+│ • !toimage — Stiker ke gambar
+│ • !toaudio — Video ke audio
+│ • !tourl — Media ke URL
+│ • !ssweb — Screenshot web
+╰───────────────────────
+
+╭─🎮 *GAME MENU* ───────
+│ • !tebakgambar
+│ • !tebakkata
+│ • !suit
+│ • !tebakbendera
+╰───────────────────────
+
+╭─😄 *FUN MENU* ───────
+│ • !joke — Cerita lucu
+│ • !faktaunik — Fakta menarik
+│ • !quotes — Kata bijak
+│ • !rate — Nilai sesuatu
+╰───────────────────────
+
+╭─🤖 *AI MENU* ────────
+│ • !gpt — ChatGPT
+│ • !gemini — AI Google
+│ • !dalle — Generate gambar
+│ • !ai — Asisten pintar
+╰───────────────────────
+
+╭─📊 *GROUP MENU* ─────
+│ • !groupinfo
+│ • !linkgc
+│ • !tagall
+│ • !hidetag
+╰───────────────────────
+
+╭─⚙️ *OTHERS* ─────────
+│ • !menu — Tampilkan menu
+│ • !help — Bantuan
+│ • !infobot — Info bot
+│ • !donasi — Support bot
+╰───────────────────────
+
+💬 Ketik perintah dengan awalan "!"
+✨ *Semoga harimu menyenangkan!* 🥰
+    `;
 }
 
 function createSimpleMenu() {
-    const simpleItems = [
-        "!menu - Tampilkan menu lengkap",
-        "!stiker - Buat stiker dari gambar/video", 
-        "!s - Shortcut !stiker",
-        "!stikertxt - Stiker dari teks",
-        "!ping - Cek status bot",
-        "!owner - Info pembuat",
-        "!help - Bantuan"
-    ];
-    
-    const box = makeTextDraw("🎯 QUICK MENU", simpleItems, { padding: 1, maxWidth: 40 });
-    return "```" + box + "```";
+    return `
+PERINTAH TIDAK ADA KETIK: !menu UNTUK MELIHAT DAFTAR MENU!!
+    `;
 }
 
 module.exports = { createMenu, createSimpleMenu };
