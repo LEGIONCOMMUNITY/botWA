@@ -215,15 +215,15 @@ module.exports = async (varz, m, body, from) => {
                 const { downloadYouTubeAudio } = require("./MENU/ytAudio");
                 const query = args.join(" ");
                 if (!query) {
-                    await sock.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytaudio Alan Walker Faded` }, { quoted: m });
+                    await varz.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytaudio Alan Walker Faded` }, { quoted: m });
                     return;
                 }
             
-                await sock.sendMessage(from, { text: "🎧 Sedang menyiapkan audio dari YouTube..." }, { quoted: m });
+                await varz.sendMessage(from, { text: "🎧 Sedang menyiapkan audio dari YouTube..." }, { quoted: m });
             
                 try {
                     const result = await downloadYouTubeAudio(query);
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         {
                             audio: result.buffer,
@@ -235,7 +235,7 @@ module.exports = async (varz, m, body, from) => {
                     );
                 } catch (error) {
                     console.error("YTAudio Error:", error);
-                    await sock.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
+                    await varz.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
                 }
                 break;
             }
