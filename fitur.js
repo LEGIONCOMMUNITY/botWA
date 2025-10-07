@@ -187,15 +187,15 @@ module.exports = async (varz, m, body, from) => {
             case `${bot.prefix}ytvideo`: {
                 const { downloadYouTubeVideo } = require("./MENU/ytVideo");
                 if (!query) {
-                    await sock.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytvideo Alan Walker Faded` }, { quoted: m });
+                    await varz.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytvideo Alan Walker Faded` }, { quoted: m });
                     return;
                 }
             
-                await sock.sendMessage(from, { text: "⏳ Sedang mendownload video dari YouTube..." }, { quoted: m });
+                await varz.sendMessage(from, { text: "⏳ Sedang mendownload video dari YouTube..." }, { quoted: m });
             
                 try {
                     const result = await downloadYouTubeVideo(query);
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         {
                             video: result.buffer,
@@ -206,7 +206,7 @@ module.exports = async (varz, m, body, from) => {
                     );
                 } catch (error) {
                     console.error("YTVideo Error:", error);
-                    await sock.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
+                    await varz.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
                 }
                 break;
             }
