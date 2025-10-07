@@ -5,7 +5,7 @@ const setting = require("./setting");
 
 const stickerMaker = new StickerMaker();
 
-module.exports = async (sock, m, body, from) => {
+module.exports = async (varz, m, body, from) => {
     const bot = setting.bot;
     const args = body.trim().split(/ +/).slice(1);
     const command = args.shift().toLowerCase();
@@ -17,16 +17,16 @@ module.exports = async (sock, m, body, from) => {
             case `${bot.prefix}help`:
             case `${bot.prefix}start`: {
                 const fullMenu = createMenu();
-                await sock.sendMessage(from, { text: fullMenu }, { quoted: m });
+                await varz.sendMessage(from, { text: fullMenu }, { quoted: m });
                 break;
             }
 
             // 🏓 PING
             case `${bot.prefix}ping`: {
                 const start = Date.now();
-                await sock.sendMessage(from, { text: `🏓 Testing ping...` }, { quoted: m });
+                await varz.sendMessage(from, { text: `🏓 Testing ping...` }, { quoted: m });
                 const latency = Date.now() - start;
-                await sock.sendMessage(
+                await varz.sendMessage(
                     from,
                     {
                         text: `✨ *PONG!*\n\n⨳ *Speed*: ${latency} ms\n⨳ *Runtime*: ${process.uptime().toFixed(
@@ -40,7 +40,7 @@ module.exports = async (sock, m, body, from) => {
 
             // 👑 OWNER
             case `${bot.prefix}owner`: {
-                await sock.sendMessage(
+                await varz.sendMessage(
                     from,
                     {
                         text: `👑 *OWNER BOT*\n\n📞 *Nomor*: +62882003684270\n💻 *Platform*: Node.js\n⚡ *Version*: 2.0\n\nButuh bantuan? Chat owner!`,
@@ -69,21 +69,21 @@ module.exports = async (sock, m, body, from) => {
 
 ✨ *Thanks for using this bot!*`;
 
-                await sock.sendMessage(from, { text: botInfo }, { quoted: m });
+                await varz.sendMessage(from, { text: botInfo }, { quoted: m });
                 break;
             }
 
             // 🎨 STIKER GAMBAR / VIDEO
             case `${bot.prefix}stiker`:
             case `${bot.prefix}s`: {
-                await sock.sendMessage(from, { text: "⏳ Sedang membuat stiker..." }, { quoted: m });
+                await varz.sendMessage(from, { text: "⏳ Sedang membuat stiker..." }, { quoted: m });
 
                 let mediaType = null;
                 if (m.message?.imageMessage) mediaType = "image";
                 else if (m.message?.videoMessage) mediaType = "video";
 
                 if (!mediaType) {
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         { text: `❌ Kirim gambar/video dengan caption *${bot.prefix}s*` },
                         { quoted: m }
@@ -95,13 +95,13 @@ module.exports = async (sock, m, body, from) => {
                     const stickerBuffer = await stickerMaker.createSticker(
                         m,
                         mediaType,
-                        sock,
+                        varz,
                         downloadMediaMessage
                     );
-                    await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
+                    await varz.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
                 } catch (err) {
                     console.error(err);
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         { text: `❌ Gagal membuat stiker:\n${err.message}` },
                         { quoted: m }
@@ -118,7 +118,7 @@ module.exports = async (sock, m, body, from) => {
                     .trim();
 
                 if (!text) {
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         {
                             text: `📝 *Cara Buat Stiker Teks:*\n\n${bot.prefix}stikertxt [teks]\n\nContoh: ${bot.prefix}stikertxt Hello World`,
@@ -128,14 +128,14 @@ module.exports = async (sock, m, body, from) => {
                     return;
                 }
                 if (text.length > 50) {
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         { text: "❌ Teks terlalu panjang! Maksimal 50 karakter." },
                         { quoted: m }
                     );
                     return;
                 }
-                await handleTextSticker(sock, m, from, text);
+                await handleTextSticker(varz, m, from, text);
                 break;
             }
 
@@ -143,9 +143,9 @@ module.exports = async (sock, m, body, from) => {
             case `${bot.prefix}take`:
             case `${bot.prefix}steal`: {
                 if (m.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
-                    await handleQuotedSticker(sock, m, from);
+                    await handleQuotedSticker(varz, m, from);
                 } else {
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         {
                             text: `🎯 *Cara Steal Sticker:*\n\nReply stiker dengan caption *${bot.prefix}take* atau *${bot.prefix}steal*`,
@@ -162,7 +162,7 @@ module.exports = async (sock, m, body, from) => {
                 const hours = Math.floor(uptime / 3600);
                 const minutes = Math.floor((uptime % 3600) / 60);
                 const seconds = Math.floor(uptime % 60);
-                await sock.sendMessage(
+                await varz.sendMessage(
                     from,
                     { text: `⏰ *RUNTIME BOT*\n\n${hours} jam ${minutes} menit ${seconds} detik` },
                     { quoted: m }
@@ -174,13 +174,13 @@ module.exports = async (sock, m, body, from) => {
                 const { searchYouTube } = require("./MENU/ytSearch");
                 const query = args.join(" ");
                 if (!query) {
-                    await sock.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytsearch Alan Walker` }, { quoted: m });
+                    await varz.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytsearch Alan Walker` }, { quoted: m });
                     return;
                 }
 
-                await sock.sendMessage(from, { text: "🔎 Mencari di YouTube..." }, { quoted: m });
+                await varz.sendMessage(from, { text: "🔎 Mencari di YouTube..." }, { quoted: m });
                 const hasil = await searchYouTube(query);
-                await sock.sendMessage(from, { text: hasil }, { quoted: m });
+                await varz.sendMessage(from, { text: hasil }, { quoted: m });
                 break;
             }
 
@@ -188,7 +188,7 @@ module.exports = async (sock, m, body, from) => {
             default: {
                 if (body.startsWith(bot.prefix)) {
                     const simpleMenu = createSimpleMenu();
-                    await sock.sendMessage(
+                    await varz.sendMessage(
                         from,
                         {
                             text: `❌ Command *${body}* tidak dikenali.\n\n${simpleMenu}`,
@@ -201,39 +201,39 @@ module.exports = async (sock, m, body, from) => {
         }
     } catch (error) {
         console.error("Error in command handler:", error);
-        await sock.sendMessage(from, { text: `❌ Terjadi error: ${error.message}` }, { quoted: m });
+        await varz.sendMessage(from, { text: `❌ Terjadi error: ${error.message}` }, { quoted: m });
     }
 };
 
 // ===============================
 // HANDLER STIKER TEKS
 // ===============================
-async function handleTextSticker(sock, m, from, text) {
+async function handleTextSticker(varz, m, from, text) {
     try {
-        await sock.sendMessage(from, { text: "⏳ Membuat stiker teks..." }, { quoted: m });
+        await varz.sendMessage(from, { text: "⏳ Membuat stiker teks..." }, { quoted: m });
         const stickerBuffer = await stickerMaker.textToSticker(text);
-        await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
-        await sock.sendMessage(from, { text: "✅ Stiker teks berhasil dibuat!" }, { quoted: m });
+        await varz.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
+        await varz.sendMessage(from, { text: "✅ Stiker teks berhasil dibuat!" }, { quoted: m });
     } catch (error) {
         console.error("Error membuat stiker teks:", error);
-        await sock.sendMessage(from, { text: `❌ Gagal membuat stiker teks: ${error.message}` }, { quoted: m });
+        await varz.sendMessage(from, { text: `❌ Gagal membuat stiker teks: ${error.message}` }, { quoted: m });
     }
 }
 
 // ===============================
 // HANDLER STEAL STIKER
 // ===============================
-async function handleQuotedSticker(sock, m, from) {
+async function handleQuotedSticker(varz, m, from) {
     try {
         const quotedMsg = m.message.extendedTextMessage.contextInfo.quotedMessage;
         if (quotedMsg.stickerMessage) {
-            await sock.sendMessage(from, { text: "✅ Stiker berhasil diambil!" }, { quoted: m });
-            await sock.sendMessage(from, { sticker: quotedMsg.stickerMessage }, { quoted: m });
+            await varz.sendMessage(from, { text: "✅ Stiker berhasil diambil!" }, { quoted: m });
+            await varz.sendMessage(from, { sticker: quotedMsg.stickerMessage }, { quoted: m });
         } else {
-            await sock.sendMessage(from, { text: "❌ Pesan yang di-reply bukan stiker!" }, { quoted: m });
+            await varz.sendMessage(from, { text: "❌ Pesan yang di-reply bukan stiker!" }, { quoted: m });
         }
     } catch (error) {
         console.error("Error steal stiker:", error);
-        await sock.sendMessage(from, { text: `❌ Gagal mengambil stiker: ${error.message}` }, { quoted: m });
+        await varz.sendMessage(from, { text: `❌ Gagal mengambil stiker: ${error.message}` }, { quoted: m });
     }
 }
