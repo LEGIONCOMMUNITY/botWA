@@ -1,4 +1,6 @@
 const ytSearch = require("yt-search");
+const setting = require("../setting");
+const bot = setting.bot;
 
 /**
  * @param {string} query
