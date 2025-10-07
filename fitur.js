@@ -4,6 +4,7 @@ const StickerMaker = require("./MENU/stickerHandler");
 const setting = require("./setting");
 
 const stickerMaker = new StickerMaker();
+const settingPath = path.join(__dirname, "setting.js");
 
 module.exports = async (sock, m, body, from) => {
     const cmd = body.toLowerCase().trim();
@@ -11,7 +12,7 @@ module.exports = async (sock, m, body, from) => {
     try {
         switch (cmd) {
             // 📜 MENU
-            case `${setting.prefix}menu`:
+            case `${setting.bot.prefix}menu`:
             case `${setting.prefix}help`:
             case `${setting.prefix}start`: {
                 const fullMenu = createMenu();
