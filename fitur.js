@@ -1,4 +1,4 @@
-const { createMenu, createSimpleMenu } = require('./menuHandler');
+const { createMenu, createSimpleMenu } = require('./MENU/menuHandler');
 
 module.exports = async(sock, m, body, from) => {
     const cmd = body.toLowerCase().trim();
