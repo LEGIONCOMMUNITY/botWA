@@ -1,4 +1,5 @@
 const fs = require("fs");
+const downloadMediaMessage = require("@whiskeysockets/baileys");
 const path = require("path");
 const { createMenu, createSimpleMenu } = require("./MENU/menuHandler");
 const StickerMaker = require("./MENU/stickerHandler");
@@ -7,6 +8,15 @@ const setting = require("./setting");
 const { bot, messages, getUptime } = setting;
 const stickerMaker = new StickerMaker();
 const settingPath = path.join(__dirname, "setting.js");
+
+fs.watchFile(settingPath, () => {
+    delete require.cache[require.resolve(settingPath)];
+    setting = require(settingPath);
+    bot = setting.bot;
+    messages = setting.messages;
+    getUptime = setting.getUptime;
+    console.log("♻️ setting.js terupdate otomatis!");
+});
 
 module.exports = async (sock, m, body, from) => {
     try {
