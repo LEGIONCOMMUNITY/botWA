@@ -184,6 +184,33 @@ module.exports = async (varz, m, body, from) => {
                 break;
             }
 
+            case `${bot.prefix}ytvideo`: {
+                const { downloadYouTubeVideo } = require("./MENU/ytVideo");
+                if (!query) {
+                    await sock.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytvideo Alan Walker Faded` }, { quoted: m });
+                    return;
+                }
+            
+                await sock.sendMessage(from, { text: "⏳ Sedang mendownload video dari YouTube..." }, { quoted: m });
+            
+                try {
+                    const result = await downloadYouTubeVideo(query);
+                    await sock.sendMessage(
+                        from,
+                        {
+                            video: result.buffer,
+                            caption: `🎬 *${result.title}*\n🔗 ${result.url}`,
+                            mimetype: "video/mp4",
+                        },
+                        { quoted: m }
+                    );
+                } catch (error) {
+                    console.error("YTVideo Error:", error);
+                    await sock.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
+                }
+                break;
+            }
+
             // ❌ COMMAND TIDAK DIKENAL
             default: {
                 if (body.startsWith(bot.prefix)) {
