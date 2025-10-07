@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 
 class StickerMaker {
     constructor() {
