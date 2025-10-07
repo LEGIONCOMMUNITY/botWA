@@ -1,40 +1,52 @@
 // ===============================
-// 📁 FILE: MENU/ytAudio.js
+// 📁 FILE: MENU/ytAudio.js (versi stabil pakai yt-dlp)
 // ===============================
 
-const ytdl = require("@distube/ytdl-core");
+const { exec } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+const ytdlp = require("yt-dlp-exec");
 
 /**
- * Download audio dari YouTube
  * @param {string} query - Link atau judul YouTube
  * @returns {Promise<{title: string, url: string, buffer: Buffer}>}
  */
 async function downloadYouTubeAudio(query) {
     try {
-        // Jika bukan URL langsung, cari video dulu
+        const ytSearch = await import("yt-search");
         let videoUrl = query;
-        if (!ytdl.validateURL(query)) {
-            const ytSearch = await import("yt-search");
+
+        if (!/^https?:\/\//.test(query)) {
             const res = await ytSearch.default(query);
             if (!res.videos.length) throw new Error("Video tidak ditemukan!");
             videoUrl = res.videos[0].url;
         }
 
-        const info = await ytdl.getInfo(videoUrl);
-        const title = info.videoDetails.title;
+        // Temp file output
+        const outputPath = path.join(__dirname, `temp_${Date.now()}.mp3`);
 
-        // Ambil stream audio saja
-        const stream = ytdl(videoUrl, { filter: "audioonly", quality: "highestaudio" });
+        // Jalankan yt-dlp
+        await ytdlp(videoUrl, {
+            extractAudio: true,
+            audioFormat: "mp3",
+            audioQuality: 0, // kualitas tertinggi
+            output: outputPath,
+        });
 
-        // Ubah stream jadi buffer
-        const chunks = [];
-        for await (const chunk of stream) chunks.push(chunk);
-        const buffer = Buffer.concat(chunks);
+        // Ambil info
+        const info = await ytdlp(videoUrl, {
+            dumpSingleJson: true,
+            noWarnings: true,
+        });
 
-        return { title, url: videoUrl, buffer };
-    } catch (error) {
-        console.error("YT Audio Error:", error);
-        throw new Error("Gagal download audio dari YouTube!");
+        // Baca buffer
+        const buffer = fs.readFileSync(outputPath);
+        fs.unlinkSync(outputPath); // hapus file setelah dikirim
+
+        return { title: info.title, url: info.webpage_url, buffer };
+    } catch (err) {
+        console.error("YT Audio Error:", err);
+        throw new Error("❌ Gagal download audio YouTube (403 atau tidak bisa diakses)");
     }
 }
 
