@@ -168,6 +168,20 @@ module.exports = async (sock, m, body, from) => {
                 break;
             }
 
+            case `${bot.prefix}ytsearch`: {
+                const { searchYouTube } = require("./MENU/ytSearch");
+                const query = args.join(" ");
+                if (!query) {
+                    await sock.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytsearch Alan Walker` }, { quoted: m });
+                    return;
+                }
+
+                await sock.sendMessage(from, { text: "🔎 Mencari di YouTube..." }, { quoted: m });
+                const hasil = await searchYouTube(query);
+                await sock.sendMessage(from, { text: hasil }, { quoted: m });
+                break;
+            }
+
             // ❌ COMMAND TIDAK DIKENAL
             default: {
                 if (body.startsWith(bot.prefix)) {
