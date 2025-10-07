@@ -110,7 +110,6 @@ async function startBot() {
             }
         })
 
-        // Handle errors
         varz.ev.on("error", (error) => {
             console.error("Unexpected error:", error)
         })
