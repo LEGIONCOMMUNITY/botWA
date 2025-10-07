@@ -13,7 +13,6 @@ function createMenu() {
 ╭─🎨 *STICKER MENU* ───
 │ • !stiker — Gambar ke stiker
 │ • !s — Shortcut stiker
-│ • !sticker — Video ke stiker
 ╰───────────────────────
 
 ╭─🌟 *BOT INFO* ───────
