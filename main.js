@@ -2,6 +2,7 @@ const { default: makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStor
 const P = require("pino")
 const readline = require("readline")
 const fitur = require("./fitur")
+const setting = require("./setting")
 
 // Buat interface untuk input
 const rl = readline.createInterface({
@@ -102,7 +103,7 @@ async function startBot() {
                            m.message.videoMessage?.caption || ""
 
                 // Cek jika message adalah command
-                if (body.startsWith("!")) {
+                if (body.startsWith(`${setting.bot.prefix}`)) {
                     await fitur(varz, m, body, from)
                 }
             } catch (error) {

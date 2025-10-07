@@ -6,10 +6,16 @@ const setting = require("./setting");
 const stickerMaker = new StickerMaker();
 
 module.exports = async (sock, m, body, from) => {
-    const cmd = body.toLowerCase().trim();
     const bot = setting.bot;
     try {
-        switch (cmd) {
+
+        if (!body.startsWith(bot.prefix)) return;
+        const withoutPrefix = body.slice(bot.prefix.length).trim();
+        const parts = withoutPrefix.split(/\s+/);
+        const command = parts.shift().toLowerCase();
+        const args = parts;
+
+        switch (command) {
             // 📜 MENU
             case `${bot.prefix}menu`:
             case `${bot.prefix}help`:
