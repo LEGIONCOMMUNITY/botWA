@@ -6,9 +6,10 @@ const setting = require("./setting");
 const stickerMaker = new StickerMaker();
 
 module.exports = async (sock, m, body, from) => {
-    const cmd = body.toLowerCase().trim();
     const bot = setting.bot;
     const args = body.trim().split(/ +/).slice(1);
+    const command = args.shift().toLowerCase();
+    
     try {
         switch (cmd) {
             // 📜 MENU
