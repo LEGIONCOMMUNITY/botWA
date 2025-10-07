@@ -1,4 +1,7 @@
-const { createMenu, createSimpleMenu } = require('./MENU/menuHandler');
+const { createMenu, createSimpleMenu } = require('.MENU/menuHandler');
+const StickerMaker = require('./MENU/stickerHandler');
+
+const stickerMaker = new StickerMaker();
 
 module.exports = async(sock, m, body, from) => {
     const cmd = body.toLowerCase().trim();
@@ -50,27 +53,28 @@ module.exports = async(sock, m, body, from) => {
         case "!stiker":
         case "!s":
         case "!sticker":
-            if (m.message.imageMessage || m.message.videoMessage) {
-                try {
-                    await sock.sendMessage(from, { 
-                        text: "⏳ Sedang membuat stiker..." 
-                    }, { quoted: m });
+            await handleSticker(sock, m, from);
+            break;
 
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
-                    await sock.sendMessage(from, { 
-                        text: "✅ Stiker berhasil dibuat!\n\n*Note:* Fitur download media sedang dalam pengembangan." 
-                    }, { quoted: m });
-                    
-                } catch (error) {
-                    console.error("Error membuat stiker:", error);
-                    await sock.sendMessage(from, { 
-                        text: "❌ Gagal membuat stiker. Coba lagi." 
-                    }, { quoted: m });
-                }
+        case "!stikertxt":
+        case "!textsticker":
+            const text = body.replace(/^!(stikertxt|textsticker)\s*/i, '');
+            if (!text) {
+                await sock.sendMessage(from, { 
+                    text: `📝 *Cara Buat Stiker Teks:*\n\n!stikertxt [teks]\n\nContoh: !stikertxt Hello World` 
+                }, { quoted: m });
+                return;
+            }
+            await handleTextSticker(sock, m, from, text);
+            break;
+
+        case "!take":
+        case "!steal":
+            if (m.message.extendedTextMessage && m.message.extendedTextMessage.contextInfo && m.message.extendedTextMessage.contextInfo.quotedMessage) {
+                await handleQuotedSticker(sock, m, from);
             } else {
                 await sock.sendMessage(from, { 
-                    text: `📸 *Cara Buat Stiker:*\n\n1. Kirim gambar atau video (maks 10 detik)\n2. Tambahkan caption: !stiker\n3. Bot akan mengubahnya menjadi stiker\n\n*Contoh:* Kirim gambar dengan caption "!stiker"` 
+                    text: `🎯 *Cara Steal Sticker:*\n\nReply stiker dengan caption !take atau !steal` 
                 }, { quoted: m });
             }
             break;
@@ -96,3 +100,95 @@ module.exports = async(sock, m, body, from) => {
             break;
     }
 };
+
+async function handleSticker(sock, m, from) {
+    if (m.message.imageMessage || m.message.videoMessage) {
+        try {
+            await sock.sendMessage(from, { 
+                text: "⏳ Sedang membuat stiker..." 
+            }, { quoted: m });
+
+            const media = m.message.imageMessage || m.message.videoMessage;
+            const mediaType = m.message.imageMessage ? 'image' : 'video';
+            
+            const stickerBuffer = await stickerMaker.createSticker(media, mediaType);
+            
+            await sock.sendMessage(from, { 
+                sticker: stickerBuffer 
+            }, { quoted: m });
+
+            await sock.sendMessage(from, { 
+                text: "✅ Stiker berhasil dibuat!" 
+            }, { quoted: m });
+
+        } catch (error) {
+            console.error("Error membuat stiker:", error);
+            await sock.sendMessage(from, { 
+                text: "❌ Gagal membuat stiker. Pastikan FFmpeg terinstall dan coba lagi." 
+            }, { quoted: m });
+        }
+    } else {
+        await sock.sendMessage(from, { 
+            text: `📸 *CARA BUAT STIKER:*\n
+🎨 *Dari Gambar/Video:*
+• Kirim gambar/video
+• Tambah caption: !stiker
+
+📝 *Dari Teks:*
+• !stikertxt [teks]
+
+🎯 *Steal Stiker:*
+• Reply stiker: !take
+
+⚡ *Shortcut:* !s (untuk gambar/video)` 
+        }, { quoted: m });
+    }
+}
+
+async function handleTextSticker(sock, m, from, text) {
+    try {
+        await sock.sendMessage(from, { 
+            text: "⏳ Membuat stiker teks..." 
+        }, { quoted: m });
+
+        const stickerBuffer = await stickerMaker.textToSticker(text);
+        
+        await sock.sendMessage(from, { 
+            sticker: stickerBuffer 
+        }, { quoted: m });
+
+    } catch (error) {
+        console.error("Error membuat stiker teks:", error);
+        await sock.sendMessage(from, { 
+            text: "❌ Gagal membuat stiker teks." 
+        }, { quoted: m });
+    }
+}
+s
+async function handleQuotedSticker(sock, m, from) {
+    try {
+        const quotedMsg = m.message.extendedTextMessage.contextInfo.quotedMessage;
+        
+        if (quotedMsg.stickerMessage) {
+            await sock.sendMessage(from, { 
+                text: "✅ Stiker berhasil diambil!" 
+            }, { quoted: m });
+            
+            // Forward stiker asli
+            await sock.sendMessage(from, { 
+                sticker: { 
+                    url: quotedMsg.stickerMessage.url 
+                } 
+            }, { quoted: m });
+        } else {
+            await sock.sendMessage(from, { 
+                text: "❌ Pesan yang di-reply bukan stiker!" 
+            }, { quoted: m });
+        }
+    } catch (error) {
+        console.error("Error steal stiker:", error);
+        await sock.sendMessage(from, { 
+            text: "❌ Gagal mengambil stiker." 
+        }, { quoted: m });
+    }
+}

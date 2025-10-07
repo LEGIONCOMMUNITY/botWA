@@ -33,9 +33,10 @@ function createMenu(botName = "✨ We-Bot AI") {
     // 📜 Menu List (dibuat manual tanpa tabel)
     const menu = `
 ╭─🎨 *STICKER MENU* ───
-│ • !stiker — Gambar ke stiker
-│ • !s — Shortcut stiker
-│ • !sticker — Video ke stiker
+│ • "!stiker - Buat stiker dari gambar",
+│ • "!s - Shortcut !stiker",
+│ • "!stikertxt - Stiker dari teks",
+│ • "!take - Steal stiker (reply)"
 ╰───────────────────────
 
 ╭─🌟 *BOT INFO* ───────
