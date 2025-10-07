@@ -164,7 +164,7 @@ async function handleTextSticker(sock, m, from, text) {
         }, { quoted: m });
     }
 }
-s
+
 async function handleQuotedSticker(sock, m, from) {
     try {
         const quotedMsg = m.message.extendedTextMessage.contextInfo.quotedMessage;
