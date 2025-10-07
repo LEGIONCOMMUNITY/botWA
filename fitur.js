@@ -20,6 +20,9 @@ fs.watchFile(settingPath, () => {
 
 module.exports = async (sock, m, body, from) => {
     try {
+        const setting = loadSetting(); // 🧩 ambil setting terbaru tiap pesan
+        const { bot, getUptime } = setting;
+
         const prefix = bot.prefix;
         if (!body.startsWith(prefix)) return;
 
