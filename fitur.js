@@ -1,5 +1,5 @@
-const { createMenu, createSimpleMenu } = require('./menuHandler');
-const StickerMaker = require('./stickerHandler');
+const { createMenu, createSimpleMenu } = require('./MENU/menuHandler');
+const StickerMaker = require('./MENU/stickerHandler');
 
 const stickerMaker = new StickerMaker();
 
