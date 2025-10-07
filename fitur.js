@@ -7,8 +7,9 @@ const stickerMaker = new StickerMaker();
 
 module.exports = async (varz, m, body, from) => {
     const bot = setting.bot;
-    const args = body.trim().split(/ +/).slice(1);
+    const args = body.trim().split(/ +/);
     const command = args.shift().toLowerCase();
+    const query = args.join(" ");
     
     try {
         switch (command) {
@@ -172,7 +173,6 @@ module.exports = async (varz, m, body, from) => {
 
             case `${bot.prefix}ytsearch`: {
                 const { searchYouTube } = require("./MENU/ytSearch");
-                const query = args.join(" ");
                 if (!query) {
                     await varz.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytsearch Alan Walker` }, { quoted: m });
                     return;
