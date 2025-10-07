@@ -1,150 +1,239 @@
-const fs = require("fs");
-const path = require("path");
-const { createMenu, createSimpleMenu } = require("./MENU/menuHandler");
-const StickerMaker = require("./MENU/stickerHandler");
+const { downloadMediaMessage } = require("@whiskeysockets/baileys");
+const { createMenu, createSimpleMenu } = require('./MENU/menuHandler');
+const StickerMaker = require('./MENU/stickerHandler');
 
 const stickerMaker = new StickerMaker();
-const settingPath = path.join(__dirname, "setting.js");
 
-// === FUNGSI AMBIL SETTING TERBARU (auto reload tiap pesan)
-function loadSetting() {
-    delete require.cache[require.resolve(settingPath)];
-    return require(settingPath);
-}
-
-module.exports = async (sock, m, body, from) => {
+module.exports = async(sock, m, body, from) => {
+    const cmd = body.toLowerCase().trim();
+    
     try {
-        // Ambil setting paling baru
-        const setting = loadSetting();
-        const { bot, getUptime } = setting;
-
-        const prefix = bot.prefix;
-        if (!body.startsWith(prefix)) return;
-
-        const cmdBody = body.slice(prefix.length).trim();
-        const [command, ...args] = cmdBody.split(/\s+/);
-        const cmd = command.toLowerCase();
-
-        const sender = m.key.participant || m.key.remoteJid;
-        const senderNum = sender.replace(/[^0-9]/g, "");
-        const ownerNum = bot.ownerNumber.replace(/[^0-9]/g, "");
-        const isOwner = senderNum === ownerNum;
-
-        switch (true) {
-            // ===== MENU =====
-            case cmd === "menu":
-            case cmd === "help":
-                await sock.sendMessage(from, { text: createMenu() }, { quoted: m });
+        switch(cmd) {
+            case "!menu":
+            case "!help":
+            case "!start":
+                const fullMenu = createMenu();
+                await sock.sendMessage(from, { text: fullMenu }, { quoted: m });
                 break;
 
-            // ===== INFO BOT =====
-            case cmd === "infobot":
-                const uptime = getUptime();
-                const info = `
-╭━━━〔 🤖 *${bot.name}* 〕━━━╮
-┃ ⚙️ Prefix : ${bot.prefix}
-┃ 👑 Owner  : ${bot.ownerName}
-┃ 💻 Platform: ${bot.platform}
-┃ 🕒 Uptime  : ${uptime}
-╰━━━━━━━━━━━━━━━━━━━━━━╯`;
-                await sock.sendMessage(from, { text: info }, { quoted: m });
-                break;
-
-            // ===== PING =====
-            case cmd === "ping":
+            case "!ping":
                 const start = Date.now();
-                await sock.sendMessage(from, { text: "🏓 Testing ping..." }, { quoted: m });
+                const pingMsg = await sock.sendMessage(from, { text: "🏓 Testing ping..." }, { quoted: m });
                 const latency = Date.now() - start;
-                await sock.sendMessage(from, {
-                    text: `✨ *PONG!*\n\n⨳ *Speed:* ${latency} ms\n⨳ *Runtime:* ${process.uptime().toFixed(2)}s`,
+                await sock.sendMessage(from, { 
+                    text: `✨ *PONG!*\n\n⨳ *Speed*: ${latency} ms\n⨳ *Runtime*: ${process.uptime().toFixed(2)}s\n⨳ *Status*: Active ✅` 
                 }, { quoted: m });
                 break;
 
-            // ===== STIKER =====
-            case cmd === "stiker":
-            case cmd === "s":
-                await handleSticker(sock, m, from);
+            case "!owner":
+                await sock.sendMessage(from, { 
+                    text: `👑 *OWNER BOT*\n\n📞 *Nomor*: +62882003684270\n💻 *Platform*: Node.js\n⚡ *Version*: 2.0\n\nButuh bantuan? Chat owner!` 
+                }, { quoted: m });
                 break;
 
-            // ===== STIKER TEKS =====
-            case cmd === "stikertxt":
-                const text = args.join(" ");
+            case "!infobot":
+                const botInfo = `
+🌟 *BOT INFORMATION*
+
+⨳ *Name*: Varz Bot
+⨳ *Version*: 2.0.0  
+⨳ *Platform*: Baileys
+⨳ *Owner*: +62882003684270
+⨳ *Mode*: Public
+⨳ *Language*: JavaScript
+
+🕒 *SYSTEM INFO*
+⨳ *Uptime*: ${process.uptime().toFixed(2)}s
+⨳ *Memory*: ${(process.memoryUsage().rss / 1024 / 1024).toFixed(2)} MB
+⨳ *Node.js*: ${process.version}
+
+✨ *Thanks for using this bot!*`;
+                
+                await sock.sendMessage(from, { text: botInfo }, { quoted: m });
+                break;
+
+            case "!stiker":
+            case "!s":
+            case '!s': {
+                await sock.sendMessage(from, { text: '⏳ Sedang membuat stiker...' }, { quoted: m });
+    
+                let mediaType = null;
+                if (m.message.imageMessage) mediaType = 'image';
+                else if (m.message.videoMessage) mediaType = 'video';
+    
+                if (!mediaType) {
+                    return sock.sendMessage(from, { text: '❌ Kirim gambar/video dengan caption !s' }, { quoted: m });
+                }
+                try {
+                    const stickerBuffer = await stickerMaker.createSticker(m, mediaType, sock, downloadMediaMessage);
+                    await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
+                } catch (err) {
+                    console.error(err);
+                    await sock.sendMessage(from, { text: `❌ Gagal membuat stiker:\n${err.message}` }, { quoted: m });
+                }
+                break;
+            }
+
+            case "!stikertxt":
+            case "!textsticker":
+                const text = body.replace(/^!(stikertxt|textsticker)\s*/i, '').trim();
                 if (!text) {
-                    await sock.sendMessage(from, { text: `📝 Contoh: ${prefix}stikertxt Halo Dunia` }, { quoted: m });
+                    await sock.sendMessage(from, { 
+                        text: `📝 *Cara Buat Stiker Teks:*\n\n!stikertxt [teks]\n\nContoh: !stikertxt Hello World` 
+                    }, { quoted: m });
+                    return;
+                }
+                if (text.length > 50) {
+                    await sock.sendMessage(from, { 
+                        text: "❌ Teks terlalu panjang! Maksimal 50 karakter." 
+                    }, { quoted: m });
                     return;
                 }
                 await handleTextSticker(sock, m, from, text);
                 break;
 
-            // ===== UBAH PREFIX =====
-            case cmd === "setprefix":
-                if (!isOwner) {
-                    await sock.sendMessage(from, { text: "🚫 Hanya owner yang dapat ubah prefix!" }, { quoted: m });
-                    return;
+            case "!take":
+            case "!steal":
+                if (m.message.extendedTextMessage?.contextInfo?.quotedMessage) {
+                    await handleQuotedSticker(sock, m, from);
+                } else {
+                    await sock.sendMessage(from, { 
+                        text: `🎯 *Cara Steal Sticker:*\n\nReply stiker dengan caption !take atau !steal` 
+                    }, { quoted: m });
                 }
-
-                const newPrefix = args[0];
-                if (!newPrefix) {
-                    await sock.sendMessage(from, { text: `⚙️ Contoh: ${prefix}setprefix ?` }, { quoted: m });
-                    return;
-                }
-
-                // Baca isi setting.js lalu ubah prefix-nya
-                let file = fs.readFileSync(settingPath, "utf8");
-                file = file.replace(/prefix:\s*['"`].*?['"`]/, `prefix: "${newPrefix}"`);
-                fs.writeFileSync(settingPath, file, "utf8");
-
-                await sock.sendMessage(from, { text: `✅ Prefix berhasil diubah ke *${newPrefix}*` }, { quoted: m });
                 break;
 
-            // ===== LIHAT PREFIX =====
-            case cmd === "prefix":
-                await sock.sendMessage(from, { text: `🔹 Prefix saat ini: *${bot.prefix}*` }, { quoted: m });
+            case "!runtime":
+                const uptime = process.uptime();
+                const hours = Math.floor(uptime / 3600);
+                const minutes = Math.floor((uptime % 3600) / 60);
+                const seconds = Math.floor(uptime % 60);
+                
+                await sock.sendMessage(from, { 
+                    text: `⏰ *RUNTIME BOT*\n\n${hours} jam ${minutes} menit ${seconds} detik` 
+                }, { quoted: m });
                 break;
 
-            // ===== DEFAULT / COMMAND TIDAK DIKENAL =====
             default:
-                await sock.sendMessage(from, { text: `❌ Command *${cmd}* tidak dikenal.\n\n${createSimpleMenu()}` }, { quoted: m });
+                if (body.startsWith("!")) {
+                    const simpleMenu = createSimpleMenu();
+                    await sock.sendMessage(from, { 
+                        text: `❌ Command *${body}* tidak dikenali.\n\n${simpleMenu}` 
+                    }, { quoted: m });
+                }
                 break;
         }
-
-    } catch (err) {
-        console.error("❌ Error Handler:", err);
-        await sock.sendMessage(from, { text: `Terjadi error: ${err.message}` }, { quoted: m });
+    } catch (error) {
+        console.error('Error in command handler:', error);
+        await sock.sendMessage(from, { 
+            text: `❌ Terjadi error: ${error.message}` 
+        }, { quoted: m });
     }
 };
 
-// ==========================
-// HANDLER TAMBAHAN
-// ==========================
+// Handler untuk stiker dari gambar/video
 async function handleSticker(sock, m, from) {
-    const setting = loadSetting();
-    const { bot } = setting;
-
     if (m.message.imageMessage || m.message.videoMessage) {
         try {
-            await sock.sendMessage(from, { text: "⏳ Membuat stiker..." }, { quoted: m });
+            const processingMsg = await sock.sendMessage(from, { 
+                text: "⏳ Sedang membuat stiker..." 
+            }, { quoted: m });
+
             const media = m.message.imageMessage || m.message.videoMessage;
-            const mediaType = m.message.imageMessage ? "image" : "video";
-
-            if (mediaType === "video" && media.seconds > 10)
-                return sock.sendMessage(from, { text: "❌ Video terlalu panjang! Maks 10 detik." }, { quoted: m });
-
+            const mediaType = m.message.imageMessage ? 'image' : 'video';
+            
+            // Cek durasi video
+            if (mediaType === 'video' && media.seconds > 10) {
+                await sock.sendMessage(from, { 
+                    text: "❌ Video terlalu panjang! Maksimal 10 detik." 
+                }, { quoted: m });
+                return;
+            }
+            
             const stickerBuffer = await stickerMaker.createSticker(media, mediaType);
-            await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
+            
+            await sock.sendMessage(from, { 
+                sticker: stickerBuffer 
+            }, { quoted: m });
+
+            await sock.sendMessage(from, { 
+                text: "✅ Stiker berhasil dibuat!" 
+            }, { quoted: m });
+
         } catch (error) {
-            await sock.sendMessage(from, { text: `❌ Gagal: ${error.message}` }, { quoted: m });
+            console.error("Error membuat stiker:", error);
+            await sock.sendMessage(from, { 
+                text: `❌ Gagal membuat stiker: ${error.message}` 
+            }, { quoted: m });
         }
     } else {
-        await sock.sendMessage(from, { text: `📸 Kirim gambar/video dengan caption ${bot.prefix}s` }, { quoted: m });
+        await sock.sendMessage(from, { 
+            text: `📸 *CARA BUAT STIKER:*\n
+🎨 *Dari Gambar/Video:*
+• Kirim gambar/video (maks 10 detik)
+• Tambah caption: !stiker
+
+📝 *Dari Teks:*
+• !stikertxt [teks]
+
+🎯 *Steal Stiker:*
+• Reply stiker: !take
+
+⚡ *Shortcut:* !s (untuk gambar/video)` 
+        }, { quoted: m });
     }
 }
 
+// Handler untuk stiker dari teks
 async function handleTextSticker(sock, m, from, text) {
     try {
+        await sock.sendMessage(from, { 
+            text: "⏳ Membuat stiker teks..." 
+        }, { quoted: m });
+
         const stickerBuffer = await stickerMaker.textToSticker(text);
-        await sock.sendMessage(from, { sticker: stickerBuffer }, { quoted: m });
+        
+        await sock.sendMessage(from, { 
+            sticker: stickerBuffer 
+        }, { quoted: m });
+
+        await sock.sendMessage(from, { 
+            text: "✅ Stiker teks berhasil dibuat!" 
+        }, { quoted: m });
+
     } catch (error) {
-        await sock.sendMessage(from, { text: `❌ Gagal: ${error.message}` }, { quoted: m });
+        console.error("Error membuat stiker teks:", error);
+        await sock.sendMessage(from, { 
+            text: `❌ Gagal membuat stiker teks: ${error.message}` 
+        }, { quoted: m });
+    }
+}
+
+// Handler untuk steal stiker
+async function handleQuotedSticker(sock, m, from) {
+    try {
+        const quotedMsg = m.message.extendedTextMessage.contextInfo.quotedMessage;
+        
+        if (quotedMsg.stickerMessage) {
+            await sock.sendMessage(from, { 
+                text: "✅ Stiker berhasil diambil!" 
+            }, { quoted: m });
+            
+            // Forward stiker asli
+            await sock.sendMessage(from, { 
+                sticker: { 
+                    url: quotedMsg.stickerMessage.url 
+                } 
+            }, { quoted: m });
+        } else {
+            await sock.sendMessage(from, { 
+                text: "❌ Pesan yang di-reply bukan stiker!" 
+            }, { quoted: m });
+        }
+    } catch (error) {
+        console.error("Error steal stiker:", error);
+        await sock.sendMessage(from, { 
+            text: `❌ Gagal mengambil stiker: ${error.message}` 
+        }, { quoted: m });
     }
 }
