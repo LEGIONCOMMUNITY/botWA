@@ -7,7 +7,7 @@ const bot = {
     name: "We-Bot AI",       // Nama bot
     prefix: "!",             // Prefix default
     ownerName: "Varz Toretto", // Nama pemilik
-    ownerNumber: "62882003684270",  // Nomor WhatsApp owner
+    ownerNumber: "@62882003684270",  // Nomor WhatsApp owner
     platform: "Android",     // Platform bot aktif
     version: "1.0.0",        // Versi bot
     aiMode: true,            // Mode AI aktif/tidak
