@@ -4,7 +4,6 @@ const StickerMaker = require("./MENU/stickerHandler");
 const setting = require("./setting");
 
 const stickerMaker = new StickerMaker();
-const settingPath = path.join(__dirname, "setting.js");
 
 module.exports = async (sock, m, body, from) => {
     const cmd = body.toLowerCase().trim();
