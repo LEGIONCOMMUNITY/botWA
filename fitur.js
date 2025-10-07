@@ -211,6 +211,35 @@ module.exports = async (varz, m, body, from) => {
                 break;
             }
 
+            case `${bot.prefix}ytaudio`: {
+                const { downloadYouTubeAudio } = require("./MENU/ytAudio");
+                const query = args.join(" ");
+                if (!query) {
+                    await sock.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytaudio Alan Walker Faded` }, { quoted: m });
+                    return;
+                }
+            
+                await sock.sendMessage(from, { text: "🎧 Sedang menyiapkan audio dari YouTube..." }, { quoted: m });
+            
+                try {
+                    const result = await downloadYouTubeAudio(query);
+                    await sock.sendMessage(
+                        from,
+                        {
+                            audio: result.buffer,
+                            fileName: `${result.title}.mp3`,
+                            mimetype: "audio/mpeg",
+                            caption: `🎵 *${result.title}*\n🔗 ${result.url}`,
+                        },
+                        { quoted: m }
+                    );
+                } catch (error) {
+                    console.error("YTAudio Error:", error);
+                    await sock.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
+                }
+                break;
+            }
+
             // ❌ COMMAND TIDAK DIKENAL
             default: {
                 if (body.startsWith(bot.prefix)) {
