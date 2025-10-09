@@ -215,30 +215,27 @@ module.exports = async (varz, m, body, from) => {
                 const { downloadYouTubeAudio } = require("./MENU/ytAudio");
                 const query = args.join(" ");
                 if (!query) {
-                    await varz.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytaudio Alan Walker Faded` }, { quoted: m });
+                    await sock.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytaudio Alan Walker - Faded` }, { quoted: m });
                     return;
                 }
             
-                await varz.sendMessage(from, { text: "🎧 Sedang menyiapkan audio dari YouTube..." }, { quoted: m });
+                await sock.sendMessage(from, { text: "🎧 Sedang menyiapkan audio YouTube..." }, { quoted: m });
             
                 try {
                     const result = await downloadYouTubeAudio(query);
-                    await varz.sendMessage(
-                        from,
-                        {
-                            audio: result.buffer,
-                            fileName: `${result.title}.mp3`,
-                            mimetype: "audio/mpeg",
-                            caption: `🎵 *${result.title}*\n🔗 ${result.url}`,
-                        },
-                        { quoted: m }
-                    );
+                    await sock.sendMessage(from, {
+                        audio: result.buffer,
+                        fileName: `${result.title}.m4a`,
+                        mimetype: "audio/m4a",
+                        caption: `🎵 *${result.title}*\n🔗 ${result.url}`
+                    }, { quoted: m });
                 } catch (error) {
-                    console.error("YTAudio Error:", error);
-                    await varz.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
+                    console.error("YTAudio Full Error:", error);
+                    await sock.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
                 }
                 break;
             }
+            
 
             // ❌ COMMAND TIDAK DIKENAL
             default: {

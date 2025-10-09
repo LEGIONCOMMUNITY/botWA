@@ -1,52 +1,83 @@
 // ===============================
-// 📁 FILE: MENU/ytAudio.js (versi stabil pakai yt-dlp)
+// 📁 FILE: MENU/ytAudio.js
 // ===============================
 
-const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
-const ytdlp = require("yt-dlp-exec");
+const youtubedl = require("youtube-dl-exec");
+const ytSearch = require("yt-search");
+const { YtDlp } = require("ytdlp-nodejs"); // fallback
 
-/**
- * @param {string} query - Link atau judul YouTube
- * @returns {Promise<{title: string, url: string, buffer: Buffer}>}
- */
 async function downloadYouTubeAudio(query) {
     try {
-        const ytSearch = await import("yt-search");
         let videoUrl = query;
 
-        if (!/^https?:\/\//.test(query)) {
-            const res = await ytSearch.default(query);
-            if (!res.videos.length) throw new Error("Video tidak ditemukan!");
+        // Jika bukan URL langsung, cari dulu
+        if (!/^https?:\/\/(www\.)?youtube\.com\/|youtu\.be\//.test(query)) {
+            const res = await ytSearch(query);
+            if (!res.videos || res.videos.length === 0) {
+                throw new Error("🔍 Tidak ditemukan video untuk kata kunci itu!");
+            }
             videoUrl = res.videos[0].url;
         }
 
-        // Temp file output
-        const outputPath = path.join(__dirname, `temp_${Date.now()}.mp3`);
+        // Gunakan youtube-dl-exec / yt-dlp sebagai prioritas
+        const tempFileName = `audio_${Date.now()}.m4a`;
+        const tempPath = path.join(__dirname, tempFileName);
 
-        // Jalankan yt-dlp
-        await ytdlp(videoUrl, {
-            extractAudio: true,
-            audioFormat: "mp3",
-            audioQuality: 0, // kualitas tertinggi
-            output: outputPath,
-        });
-
-        // Ambil info
-        const info = await ytdlp(videoUrl, {
+        // Download metadata dulu
+        const meta = await youtubedl(videoUrl, {
             dumpSingleJson: true,
             noWarnings: true,
+            noCheckCertificates: true,
+            preferFreeFormats: true,
+            addHeader: [
+                "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "referer: https://www.youtube.com"
+            ],
+        });
+
+        const title = meta.title || "audio_youtube";
+
+        // Download audio saja
+        await youtubedl(videoUrl, {
+            extractAudio: true,
+            audioFormat: "m4a", 
+            // bisa juga 'mp3' tapi kadang perlu konversi
+            output: tempPath,
+            // tambahan header
+            addHeader: [
+                "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "referer: https://www.youtube.com"
+            ],
         });
 
         // Baca buffer
-        const buffer = fs.readFileSync(outputPath);
-        fs.unlinkSync(outputPath); // hapus file setelah dikirim
+        const buffer = fs.readFileSync(tempPath);
+        // hapus file sementara
+        fs.unlinkSync(tempPath);
 
-        return { title: info.title, url: info.webpage_url, buffer };
+        return { title, url: videoUrl, buffer };
+
     } catch (err) {
-        console.error("YT Audio Error:", err);
-        throw new Error("❌ Gagal download audio YouTube (403 atau tidak bisa diakses)");
+        console.warn("youtube-dl-exec gagal, coba fallback:", err.message);
+
+        // Fallback ke ytdlp-nodejs
+        try {
+            const ytdlp = new YtDlp();
+            const output = await ytdlp.downloadAsync(query, {
+                filter: "audioonly",
+                quality: "highestaudio",
+            });
+            // output.path adalah path file yang di-download
+            const buffer2 = fs.readFileSync(output.path);
+            // hapus lokal file setelah dibaca
+            fs.unlinkSync(output.path);
+            return { title: output.title || "audio_fallback", url: query, buffer: buffer2 };
+        } catch (err2) {
+            console.error("Fallback YTDLP juga gagal:", err2.message);
+            throw new Error("❌ Gagal download audio YouTube!");
+        }
     }
 }
 
