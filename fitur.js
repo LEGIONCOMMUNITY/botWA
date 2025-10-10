@@ -222,6 +222,8 @@ module.exports = async (varz, m, body, from) => {
             }
 
             case `${bot.prefix}pinterest`: {
+                const pinterest = require("./MENU/pinterest");
+                
                 await pinterest(varz, m, from, text);
                 break;
             }
