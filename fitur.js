@@ -214,7 +214,7 @@ module.exports = async (varz, m, body, from) => {
 
             case `${bot.prefix}ytaudio`: {
                 if (!args[0]) {
-                    await varz.sendMessage(from, { text: "❌ Masukkan link YouTube!\n\nContoh: .ytaudio https://youtu.be/xxxx" });
+                    await varz.sendMessage(from, { text: "❌ Masukkan link YouTube!\nContoh: .ytaudio https://youtu.be/xxxx" });
                     return;
                 }
                 await youtubeAudio(varz, m, from, args[0]);
