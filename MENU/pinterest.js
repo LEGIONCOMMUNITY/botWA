@@ -10,130 +10,120 @@ module.exports = async (varz, m, from, query) => {
 
         await varz.sendMessage(from, { text: `🔍 Mencari gambar Pinterest untuk *${query}* ...` });
 
-        const url = `https://www.pinterest.com/resource/BaseSearchResource/get/`;
-        
-        const params = {
-            source_url: `/search/pins/?q=${encodeURIComponent(query)}`,
-            data: JSON.stringify({
-                options: {
-                    query: query,
-                    scope: "pins",
-                    bookmarks: [""]
-                }
-            })
-        };
+        let imageUrls = new Set();
 
-        const res = await axios.get(url, {
-            params: params,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                "Accept": "application/json, text/plain, */*",
-                "Accept-Language": "en-US,en;q=0.9",
-                "Referer": `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`
+        // =============== METHOD 1: Pinterest GraphQL (kemungkinan gagal di 2025)
+        try {
+            const graphqlUrl = "https://www.pinterest.com/resource/BaseSearchResource/get/";
+            const options = {
+                method: "GET",
+                url: graphqlUrl,
+                params: {
+                    source_url: `/search/pins/?q=${encodeURIComponent(query)}`,
+                    data: `{"options":{"query":"${query}","scope":"pins","page_size":25},"context":{}}`
+                },
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Accept": "application/json, text/plain, */*",
+                    "Referer": `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`
+                },
+                timeout: 8000
+            };
+
+            const response = await axios(options);
+            if (response.data?.resource_response?.data?.results) {
+                const results = response.data.resource_response.data.results;
+                for (const r of results) {
+                    const url = r.images?.orig?.url || r.images?.["736x"]?.url;
+                    if (url) imageUrls.add(url);
+                }
             }
-        });
-
-        const imageUrls = new Set();
-        
-        // Parse JSON response dari API Pinterest
-        if (res.data && res.data.resource_response && res.data.resource_response.data) {
-            const pins = res.data.resource_response.data.results || [];
-            
-            pins.forEach(pin => {
-                if (pin.images && pin.images.orig) {
-                    imageUrls.add(pin.images.orig.url);
-                }
-            });
+        } catch {
+            console.log("⚠️ GraphQL API gagal, lanjut fallback...");
         }
 
-        // Fallback ke scraping HTML jika API tidak bekerja
+        // =============== METHOD 2: Google Image fallback (paling andal)
         if (imageUrls.size === 0) {
-            const htmlUrl = `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`;
-            const htmlRes = await axios.get(htmlUrl, {
-                headers: {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-                }
-            });
+            try {
+                const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(query + " site:pinterest.com")}&tbm=isch`;
+                const googleRes = await axios.get(googleUrl, {
+                    headers: {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                    },
+                    timeout: 10000
+                });
 
-            const $ = cheerio.load(htmlRes.data);
-            
-            // Mencari gambar dalam data JSON yang tersembunyi di HTML
-            $('script').each((i, el) => {
-                const scriptContent = $(el).html();
-                if (scriptContent && scriptContent.includes("__PWS_DATA__")) {
-                    try {
-                        const jsonMatch = scriptContent.match(/window\.__PWS_DATA__\s*=\s*({.*?});/);
-                        if (jsonMatch) {
-                            const jsonData = JSON.parse(jsonMatch[1]);
-                            const pins = jsonData?.props?.initialReduxState?.pins || {};
-                            
-                            Object.values(pins).forEach(pin => {
-                                if (pin.images && pin.images.orig) {
-                                    imageUrls.add(pin.images.orig.url);
-                                }
-                            });
-                        }
-                    } catch (e) {
-                        console.log("Error parsing JSON:", e.message);
-                    }
-                }
-            });
-
-            // Fallback ke selector gambar biasa
-            if (imageUrls.size === 0) {
-                $('img[src*="i.pinimg.com"]').each((i, el) => {
-                    let src = $(el).attr("src");
+                const $ = cheerio.load(googleRes.data);
+                $("img").each((_, el) => {
+                    const src =
+                        $(el).attr("src") ||
+                        $(el).attr("data-src") ||
+                        $(el).attr("data-iurl") ||
+                        $(el).attr("srcset");
                     if (src && src.includes("i.pinimg.com")) {
-                        // Hilangkan parameter ukuran untuk mendapatkan gambar asli
-                        const cleanUrl = src.split('?')[0];
-                        imageUrls.add(cleanUrl);
+                        const cleanSrc = src.split(" ")[0].trim();
+                        imageUrls.add(cleanSrc);
                     }
                 });
+            } catch (err) {
+                console.log("Google fallback error:", err.message);
             }
         }
 
+        // =============== METHOD 3: HTML scraping Pinterest langsung
         if (imageUrls.size === 0) {
-            await varz.sendMessage(from, { text: "❌ Tidak menemukan gambar dari Pinterest. Coba kata kunci lain!" });
-            return;
-        }
+            try {
+                const url = `https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`;
+                const htmlRes = await axios.get(url, {
+                    headers: {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+                    },
+                    timeout: 10000
+                });
 
-        const urls = Array.from(imageUrls).filter(url => 
-            url && (url.includes('.jpg') || url.includes('.png') || url.includes('.jpeg'))
-        );
-
-        if (urls.length === 0) {
-            await varz.sendMessage(from, { text: "❌ Tidak ada gambar valid yang ditemukan." });
-            return;
-        }
-
-        const randomUrl = urls[Math.floor(Math.random() * urls.length)];
-        
-        console.log(`Downloading image from: ${randomUrl}`);
-
-        const img = await axios.get(randomUrl, { 
-            responseType: "arraybuffer",
-            timeout: 30000,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                "Referer": "https://www.pinterest.com/"
+                const $ = cheerio.load(htmlRes.data);
+                $("img").each((_, el) => {
+                    let src =
+                        $(el).attr("src") ||
+                        $(el).attr("srcset") ||
+                        $(el).attr("data-src") ||
+                        $(el).attr("data-srcset");
+                    if (src && src.includes("i.pinimg.com")) {
+                        const match = src.match(/https:\/\/i\.pinimg\.com\/[^ ]+/);
+                        if (match) imageUrls.add(match[0].split(" ")[0]);
+                    }
+                });
+            } catch (err) {
+                console.log("Pinterest HTML parse gagal:", err.message);
             }
+        }
+
+        // =============== CEK HASIL
+        if (imageUrls.size === 0) {
+            await varz.sendMessage(from, { text: "❌ Tidak menemukan gambar dari Pinterest. Coba kata lain!" });
+            return;
+        }
+
+        const urls = Array.from(imageUrls);
+        const randomUrl = urls[Math.floor(Math.random() * urls.length)];
+        console.log(`✅ Found ${urls.length} images, sending: ${randomUrl}`);
+
+        const imgResponse = await axios.get(randomUrl, {
+            responseType: "arraybuffer",
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            },
+            timeout: 15000
         });
 
         await varz.sendMessage(from, {
-            image: img.data,
-            caption: `📷 Hasil random Pinterest untuk: *${query}*\n🔗 ${randomUrl}`
+            image: imgResponse.data,
+            caption: `📷 Pinterest: *${query}*\n✅ ${urls.length} gambar ditemukan`
         });
-
     } catch (err) {
-        console.error("Pinterest Scraper Error:", err.message);
-        
-        let errorMessage = "❌ Terjadi kesalahan saat mengambil data dari Pinterest.";
-        if (err.code === 'ECONNABORTED') {
-            errorMessage = "❌ Timeout: Koneksi ke Pinterest terlalu lama.";
-        } else if (err.response && err.response.status === 403) {
-            errorMessage = "❌ Akses ditolak: Pinterest memblokir permintaan. Coba lagi nanti.";
-        }
-        
-        await varz.sendMessage(from, { text: errorMessage });
+        console.error("Final Error:", err.message);
+        await varz.sendMessage(from, {
+            text: `❌ Gagal mengambil gambar. Error: ${err.message}`
+        });
     }
 };
