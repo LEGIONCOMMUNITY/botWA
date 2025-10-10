@@ -9,24 +9,25 @@ module.exports = async (varz, m, from, query) => {
 
         await varz.sendMessage(from, { text: `🔍 Mencari gambar Pinterest: *${query}* ...` });
 
-        const apiKey = "YOUR_API_KEY";
+        const API_KEY = "YOUR_SCRAPE_CREATORS_API_KEY";
         const url = `https://api.scrapecreators.com/v1/pinterest/search?query=${encodeURIComponent(query)}`;
 
         const resp = await axios.get(url, {
-            headers: {
-                "x-api-key": apiKey
-            }
+            headers: { "x-api-key": API_KEY }
         });
 
-        if (!resp.data || !resp.data.pins || resp.data.pins.length === 0) {
-            await varz.sendMessage(from, { text: "❌ Tidak ada hasil ditemukan di Pinterest." });
+        // Debug: log full response for inspeksi
+        console.log("ScrapeCreators response:", resp.data);
+
+        if (!resp.data || !resp.data.success || !Array.isArray(resp.data.pins) || resp.data.pins.length === 0) {
+            await varz.sendMessage(from, { text: "❌ Tidak ada hasil ditemukan di Pinterest melalui ScrapeCreators." });
             return;
         }
 
-        // ambil random pin
+        // Pilih pin random
         const pin = resp.data.pins[Math.floor(Math.random() * resp.data.pins.length)];
 
-        // cari URL gambar (struktur akan tergantung response pin)
+        // Cek beberapa kemungkinan field untuk URL gambar
         let imageUrl = null;
         if (pin.images && pin.images.orig && pin.images.orig.url) {
             imageUrl = pin.images.orig.url;
@@ -37,19 +38,20 @@ module.exports = async (varz, m, from, query) => {
         }
 
         if (!imageUrl) {
-            await varz.sendMessage(from, { text: "⚠️ Gambar tidak tersedia di pin ini." });
+            await varz.sendMessage(from, { text: "⚠️ Tidak menemukan URL gambar dalam pin ini." });
             return;
         }
 
-        // download gambar
+        // Download gambar
         const imgResp = await axios.get(imageUrl, { responseType: "arraybuffer" });
+
         await varz.sendMessage(from, {
             image: imgResp.data,
             caption: `📷 Gambar random dari Pinterest untuk: *${query}*`
         });
 
     } catch (err) {
-        console.error("Error Pinterest:", err.response ? err.response.data : err.message);
+        console.error("Error Pinterest (ScrapeCreators):", err.response?.data || err.message);
         await varz.sendMessage(from, { text: "❌ Terjadi kesalahan saat mengambil data Pinterest." });
     }
 };
