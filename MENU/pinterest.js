@@ -1,4 +1,5 @@
 const axios = require("axios");
+const cheerio = require("cheerio");
 
 module.exports = async (varz, m, from, query) => {
     try {
@@ -9,49 +10,37 @@ module.exports = async (varz, m, from, query) => {
 
         await varz.sendMessage(from, { text: `🔍 Mencari gambar Pinterest: *${query}* ...` });
 
-        const API_KEY = "YOUR_SCRAPE_CREATORS_API_KEY";
-        const url = `https://api.scrapecreators.com/v1/pinterest/search?query=${encodeURIComponent(query)}`;
-
-        const resp = await axios.get(url, {
-            headers: { "x-api-key": API_KEY }
+        const res = await axios.get(`https://www.pinterest.com/search/pins/?q=${encodeURIComponent(query)}`, {
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+            }
         });
 
-        // Debug: log full response for inspeksi
-        console.log("ScrapeCreators response:", resp.data);
+        const $ = cheerio.load(res.data);
+        const imageUrls = [];
 
-        if (!resp.data || !resp.data.success || !Array.isArray(resp.data.pins) || resp.data.pins.length === 0) {
-            await varz.sendMessage(from, { text: "❌ Tidak ada hasil ditemukan di Pinterest melalui ScrapeCreators." });
+        $('img').each((i, el) => {
+            const src = $(el).attr('src');
+            if (src && src.startsWith('https://i.pinimg.com/')) {
+                imageUrls.push(src);
+            }
+        });
+
+        if (imageUrls.length === 0) {
+            await varz.sendMessage(from, { text: "❌ Tidak menemukan gambar dari Pinterest." });
             return;
         }
 
-        // Pilih pin random
-        const pin = resp.data.pins[Math.floor(Math.random() * resp.data.pins.length)];
-
-        // Cek beberapa kemungkinan field untuk URL gambar
-        let imageUrl = null;
-        if (pin.images && pin.images.orig && pin.images.orig.url) {
-            imageUrl = pin.images.orig.url;
-        } else if (pin.image_url) {
-            imageUrl = pin.image_url;
-        } else if (pin.media && pin.media.image && pin.media.image.url) {
-            imageUrl = pin.media.image.url;
-        }
-
-        if (!imageUrl) {
-            await varz.sendMessage(from, { text: "⚠️ Tidak menemukan URL gambar dalam pin ini." });
-            return;
-        }
-
-        // Download gambar
-        const imgResp = await axios.get(imageUrl, { responseType: "arraybuffer" });
+        const randomImage = imageUrls[Math.floor(Math.random() * imageUrls.length)];
+        const img = await axios.get(randomImage, { responseType: "arraybuffer" });
 
         await varz.sendMessage(from, {
-            image: imgResp.data,
-            caption: `📷 Gambar random dari Pinterest untuk: *${query}*`
+            image: img.data,
+            caption: `📷 Hasil random dari Pinterest untuk: *${query}*`
         });
 
     } catch (err) {
-        console.error("Error Pinterest (ScrapeCreators):", err.response?.data || err.message);
+        console.error("Pinterest Scraper Error:", err.message);
         await varz.sendMessage(from, { text: "❌ Terjadi kesalahan saat mengambil data Pinterest." });
     }
 };
