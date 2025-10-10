@@ -224,7 +224,7 @@ module.exports = async (varz, m, body, from) => {
             case `${bot.prefix}wallpaper`: {
                 const wallpaperHD = require("./MENU/wallpaper");
 
-                await wallpaperHD(sock, msg, from, args);
+                await wallpaperHD(varz, m, from, args);
                 break;
             }
 
