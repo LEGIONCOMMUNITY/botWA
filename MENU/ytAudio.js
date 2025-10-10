@@ -1,84 +1,39 @@
-// ===============================
-// 📁 FILE: MENU/ytAudio.js
-// ===============================
-
+const ytdl = require("ytdl-core");
 const fs = require("fs");
 const path = require("path");
-const youtubedl = require("youtube-dl-exec");
-const ytSearch = require("yt-search");
-const { YtDlp } = require("ytdlp-nodejs"); // fallback
 
-async function downloadYouTubeAudio(query) {
+module.exports = async (varz, msg, from, url) => {
     try {
-        let videoUrl = query;
-
-        // Jika bukan URL langsung, cari dulu
-        if (!/^https?:\/\/(www\.)?youtube\.com\/|youtu\.be\//.test(query)) {
-            const res = await ytSearch(query);
-            if (!res.videos || res.videos.length === 0) {
-                throw new Error("🔍 Tidak ditemukan video untuk kata kunci itu!");
-            }
-            videoUrl = res.videos[0].url;
+        if (!ytdl.validateURL(url)) {
+            await varz.sendMessage(from, { text: "❌ URL YouTube tidak valid!" });
+            return;
         }
 
-        // Gunakan youtube-dl-exec / yt-dlp sebagai prioritas
-        const tempFileName = `audio_${Date.now()}.m4a`;
-        const tempPath = path.join(__dirname, tempFileName);
+        const info = await ytdl.getInfo(url);
+        const title = info.videoDetails.title.replace(/[^\w\s]/gi, "");
+        const filePath = path.resolve(__dirname, `${title}.mp3`);
 
-        // Download metadata dulu
-        const meta = await youtubedl(videoUrl, {
-            dumpSingleJson: true,
-            noWarnings: true,
-            noCheckCertificates: true,
-            preferFreeFormats: true,
-            addHeader: [
-                "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "referer: https://www.youtube.com"
-            ],
+        await varz.sendMessage(from, { text: `⏳ Sedang mendownload audio...\n🎧 Judul: ${info.videoDetails.title}` });
+
+        await new Promise((resolve, reject) => {
+            ytdl(url, { filter: "audioonly", quality: "highestaudio" })
+                .pipe(fs.createWriteStream(filePath))
+                .on("finish", resolve)
+                .on("error", reject);
         });
 
-        const title = meta.title || "audio_youtube";
+        const audioBuffer = fs.readFileSync(filePath);
 
-        // Download audio saja
-        await youtubedl(videoUrl, {
-            extractAudio: true,
-            audioFormat: "m4a", 
-            // bisa juga 'mp3' tapi kadang perlu konversi
-            output: tempPath,
-            // tambahan header
-            addHeader: [
-                "user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "referer: https://www.youtube.com"
-            ],
+        await varz.sendMessage(from, {
+            audio: audioBuffer,
+            mimetype: "audio/mp4",
+            fileName: `${title}.mp3`,
+            ptt: false,
         });
 
-        // Baca buffer
-        const buffer = fs.readFileSync(tempPath);
-        // hapus file sementara
-        fs.unlinkSync(tempPath);
-
-        return { title, url: videoUrl, buffer };
-
+        fs.unlinkSync(filePath);
     } catch (err) {
-        console.warn("youtube-dl-exec gagal, coba fallback:", err.message);
-
-        // Fallback ke ytdlp-nodejs
-        try {
-            const ytdlp = new YtDlp();
-            const output = await ytdlp.downloadAsync(query, {
-                filter: "audioonly",
-                quality: "highestaudio",
-            });
-            // output.path adalah path file yang di-download
-            const buffer2 = fs.readFileSync(output.path);
-            // hapus lokal file setelah dibaca
-            fs.unlinkSync(output.path);
-            return { title: output.title || "audio_fallback", url: query, buffer: buffer2 };
-        } catch (err2) {
-            console.error("Fallback YTDLP juga gagal:", err2.message);
-            throw new Error("❌ Gagal download audio YouTube!");
-        }
+        console.error(err);
+        await varz.sendMessage(from, { text: "❌ Gagal mendownload audio. Coba lagi." });
     }
-}
-
-module.exports = { downloadYouTubeAudio };
+};

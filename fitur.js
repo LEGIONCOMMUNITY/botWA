@@ -2,6 +2,7 @@ const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 const { createMenu, createSimpleMenu } = require("./MENU/menuHandler");
 const StickerMaker = require("./MENU/stickerHandler");
 const setting = require("./setting");
+const youtubeAudio = require("./MENU/ytAudio");
 
 const stickerMaker = new StickerMaker();
 
@@ -212,30 +213,13 @@ module.exports = async (varz, m, body, from) => {
             }
 
             case `${bot.prefix}ytaudio`: {
-                const { downloadYouTubeAudio } = require("./MENU/ytAudio");
-                const query = args.join(" ");
-                if (!query) {
-                    await varz.sendMessage(from, { text: `📝 Contoh: ${bot.prefix}ytaudio Alan Walker - Faded` }, { quoted: m });
+                if (!args[0]) {
+                    await varz.sendMessage(from, { text: "❌ Masukkan link YouTube!\n\nContoh: .ytaudio https://youtu.be/xxxx" });
                     return;
                 }
-            
-                await varz.sendMessage(from, { text: "🎧 Sedang menyiapkan audio YouTube..." }, { quoted: m });
-            
-                try {
-                    const result = await downloadYouTubeAudio(query);
-                    await varz.sendMessage(from, {
-                        audio: result.buffer,
-                        fileName: `${result.title}.m4a`,
-                        mimetype: "audio/m4a",
-                        caption: `🎵 *${result.title}*\n🔗 ${result.url}`
-                    }, { quoted: m });
-                } catch (error) {
-                    console.error("YTAudio Full Error:", error);
-                    await varz.sendMessage(from, { text: `❌ ${error.message}` }, { quoted: m });
-                }
+                await youtubeAudio(varz, msg, from, args[0]);
                 break;
             }
-            
 
             // ❌ COMMAND TIDAK DIKENAL
             default: {
