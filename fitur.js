@@ -221,10 +221,10 @@ module.exports = async (varz, m, body, from) => {
                 break;
             }
 
-            case `${bot.prefix}pinterest`: {
-                const pinterest = require("./MENU/pinterest");
+            case `${bot.prefix}`: {
+                const wallpaperHD = require("./MENU/wallpaper");
 
-                await pinterest(varz, m, from, args[0]);
+                await wallpaperHD(sock, msg, from, args);
                 break;
             }
 

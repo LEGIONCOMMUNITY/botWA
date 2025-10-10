@@ -25,7 +25,6 @@ function createMenu() {
 
 ╭─🔍 *SEARCH MENU* ────
 │ • ${setting.bot.prefix}ytsearch — Cari YouTube
-│ • ${setting.bot.prefix}pinterest — Gambar random
 │ • ${setting.bot.prefix}wallpaper — Wallpaper HD
 │ • ${setting.bot.prefix}playstore — Cari aplikasi
 ╰───────────────────────
