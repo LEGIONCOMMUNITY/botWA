@@ -1,4 +1,5 @@
 const { makeTextDraw } = require('./textDraw');
+const setting = require("../setting");
 
 function createMenu() {
     return `
@@ -11,71 +12,71 @@ function createMenu() {
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
 ╭─🎨 *STICKER MENU* ───
-│ • !stiker — Gambar ke stiker
-│ • !s — Shortcut stiker
+│ • ${setting.bot.prefix}stiker — Gambar ke stiker
+│ • ${setting.bot.prefix}s — Shortcut stiker
 ╰───────────────────────
 
 ╭─🌟 *BOT INFO* ───────
-│ • !ping — Cek status
-│ • !runtime — Waktu aktif
-│ • !speedtest — Tes kecepatan
-│ • !owner — Info pembuat
+│ • ${setting.bot.prefix}ping — Cek status
+│ • ${setting.bot.prefix}runtime — Waktu aktif
+│ • ${setting.bot.prefix}speedtest — Tes kecepatan
+│ • ${setting.bot.prefix}owner — Info pembuat
 ╰───────────────────────
 
 ╭─🔍 *SEARCH MENU* ────
-│ • !ytsearch — Cari YouTube
-│ • !pinterest — Gambar random
-│ • !wallpaper — Wallpaper HD
-│ • !playstore — Cari aplikasi
+│ • ${setting.bot.prefix}ytsearch — Cari YouTube
+│ • ${setting.bot.prefix}pinterest — Gambar random
+│ • ${setting.bot.prefix}wallpaper — Wallpaper HD
+│ • ${setting.bot.prefix}playstore — Cari aplikasi
 ╰───────────────────────
 
 ╭─📥 *DOWNLOAD MENU* ─
-│ • !ytaudio — Audio YouTube
-│ • !ytvideo — Video YouTube
-│ • !tiktok — Download TikTok
-│ • !instagram — Download IG
+│ • ${setting.bot.prefix}ytaudio — Audio YouTube
+│ • ${setting.bot.prefix}ytvideo — Video YouTube
+│ • ${setting.bot.prefix}tiktok — Download TikTok
+│ • ${setting.bot.prefix}instagram — Download IG
 ╰───────────────────────
 
 ╭─🛠️ *TOOLS / CONVERTER* ─
-│ • !toimage — Stiker ke gambar
-│ • !toaudio — Video ke audio
-│ • !tourl — Media ke URL
-│ • !ssweb — Screenshot web
+│ • ${setting.bot.prefix}toimage — Stiker ke gambar
+│ • ${setting.bot.prefix}toaudio — Video ke audio
+│ • ${setting.bot.prefix}tourl — Media ke URL
+│ • ${setting.bot.prefix}ssweb — Screenshot web
 ╰───────────────────────
 
 ╭─🎮 *GAME MENU* ───────
-│ • !tebakgambar
-│ • !tebakkata
-│ • !suit
-│ • !tebakbendera
+│ • ${setting.bot.prefix}tebakgambar
+│ • ${setting.bot.prefix}tebakkata
+│ • ${setting.bot.prefix}suit
+│ • ${setting.bot.prefix}tebakbendera
 ╰───────────────────────
 
 ╭─😄 *FUN MENU* ───────
-│ • !joke — Cerita lucu
-│ • !faktaunik — Fakta menarik
-│ • !quotes — Kata bijak
-│ • !rate — Nilai sesuatu
+│ • ${setting.bot.prefix}joke — Cerita lucu
+│ • ${setting.bot.prefix}faktaunik — Fakta menarik
+│ • ${setting.bot.prefix}quotes — Kata bijak
+│ • ${setting.bot.prefix}rate — Nilai sesuatu
 ╰───────────────────────
 
 ╭─🤖 *AI MENU* ────────
-│ • !gpt — ChatGPT
-│ • !gemini — AI Google
-│ • !dalle — Generate gambar
-│ • !ai — Asisten pintar
+│ • ${setting.bot.prefix}gpt — ChatGPT
+│ • ${setting.bot.prefix}gemini — AI Google
+│ • ${setting.bot.prefix}dalle — Generate gambar
+│ • ${setting.bot.prefix}ai — Asisten pintar
 ╰───────────────────────
 
 ╭─📊 *GROUP MENU* ─────
-│ • !groupinfo
-│ • !linkgc
-│ • !tagall
-│ • !hidetag
+│ • ${setting.bot.prefix}groupinfo
+│ • ${setting.bot.prefix}linkgc
+│ • ${setting.bot.prefix}tagall
+│ • ${setting.bot.prefix}hidetag
 ╰───────────────────────
 
 ╭─⚙️ *OTHERS* ─────────
-│ • !menu — Tampilkan menu
-│ • !help — Bantuan
-│ • !infobot — Info bot
-│ • !donasi — Support bot
+│ • ${setting.bot.prefix}menu — Tampilkan menu
+│ • ${setting.bot.prefix}help — Bantuan
+│ • ${setting.bot.prefix}infobot — Info bot
+│ • ${setting.bot.prefix}donasi — Support bot
 ╰───────────────────────
 
 💬 Ketik perintah dengan awalan "!"
@@ -85,7 +86,7 @@ function createMenu() {
 
 function createSimpleMenu() {
     return `
-PERINTAH TIDAK ADA KETIK: !menu UNTUK MELIHAT DAFTAR MENU!!
+PERINTAH TIDAK ADA KETIK: ${setting.bot.prefix}menu UNTUK MELIHAT DAFTAR MENU!!
     `;
 }
 

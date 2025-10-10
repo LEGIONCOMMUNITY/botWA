@@ -221,6 +221,11 @@ module.exports = async (varz, m, body, from) => {
                 break;
             }
 
+            case `${bot.prefix}pinterest`: {
+                await pinterest(varz, m, from, text);
+                break;
+            }
+
             // ❌ COMMAND TIDAK DIKENAL
             default: {
                 if (body.startsWith(bot.prefix)) {
