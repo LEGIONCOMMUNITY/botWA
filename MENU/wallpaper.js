@@ -1,7 +1,7 @@
 const axios = require("axios");
 const cheerio = require("cheerio");
 
-module.exports = async (varz, varz, from, query) => {
+module.exports = async (varz, from, query) => {
     try {
         if (!query) {
             await varz.sendMessage(from, { text: "⚠️ Masukkan kata kunci, contoh:\n.wallpaper anime" });
