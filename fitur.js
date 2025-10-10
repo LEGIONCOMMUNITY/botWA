@@ -217,7 +217,7 @@ module.exports = async (varz, m, body, from) => {
                     await varz.sendMessage(from, { text: "❌ Masukkan link YouTube!\n\nContoh: .ytaudio https://youtu.be/xxxx" });
                     return;
                 }
-                await youtubeAudio(varz, msg, from, args[0]);
+                await youtubeAudio(varz, m, from, args[0]);
                 break;
             }
 

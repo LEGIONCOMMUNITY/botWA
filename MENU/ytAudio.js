@@ -2,7 +2,7 @@ const ytdl = require("ytdl-core");
 const fs = require("fs");
 const path = require("path");
 
-module.exports = async (varz, msg, from, url) => {
+module.exports = async (varz, m, from, url) => {
     try {
         if (!ytdl.validateURL(url)) {
             await varz.sendMessage(from, { text: "❌ URL YouTube tidak valid!" });
