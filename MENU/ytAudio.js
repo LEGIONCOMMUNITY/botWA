@@ -1,57 +1,48 @@
+const ytdl = require("@distube/ytdl-core");
 const fs = require("fs");
-const path = require("path");
 const ffmpeg = require("fluent-ffmpeg");
-const { yt } = require("yt-dlp-exec"); // untuk import jika perlu alias
-const ytdlp = require("yt-dlp-exec");
+const ffmpegPath = require("ffmpeg-static");
+ffmpeg.setFfmpegPath(ffmpegPath);
 
-module.exports = async (varz, m, from, url) => {
+module.exports = async (varz, m, from, args) => {
     try {
-        if (!url.startsWith("http")) {
-            await varz.sendMessage(from, { text: "❌ URL YouTube tidak valid!" });
-            return;
+        if (!args[0]) {
+            return varz.sendMessage(from, { text: "❌ Masukkan link atau judul YouTube!\nContoh: !ytaudio https://youtube.com/xxxxx" });
         }
 
-        const outputDir = path.join(__dirname, "downloads");
-        if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir);
+        const url = args[0];
 
-        const tempFile = path.join(outputDir, "temp_audio.m4a");
-        const finalFile = path.join(outputDir, "audio.mp3");
+        // Cek apakah link valid
+        if (!ytdl.validateURL(url)) {
+            return varz.sendMessage(from, { text: "❌ Link YouTube tidak valid!" });
+        }
 
-        await varz.sendMessage(from, { text: "⏳ Sedang mengambil audio dari YouTube..." });
+        const info = await ytdl.getInfo(url);
+        const title = info.videoDetails.title.replace(/[^\w\s]/gi, "");
+        const filePath = `./temp/${title}.mp3`;
 
-        // 1️⃣ Download audio menggunakan yt-dlp (format m4a biar lossless)
-        await ytdlp(url, {
-            output: tempFile,
-            extractAudio: true,
-            audioFormat: "m4a",
-            audioQuality: 0,
-            quiet: true
-        });
+        varz.sendMessage(from, { text: `🎵 Sedang mengunduh audio: *${title}* ... tunggu ya` });
 
-        // 2️⃣ Konversi ke MP3 menggunakan FFmpeg
-        await new Promise((resolve, reject) => {
-            ffmpeg(tempFile)
-                .toFormat("mp3")
-                .on("error", reject)
-                .on("end", resolve)
-                .save(finalFile);
-        });
+        const stream = ytdl(url, { quality: "highestaudio" });
 
-        const audioBuffer = fs.readFileSync(finalFile);
+        ffmpeg(stream)
+            .audioBitrate(128)
+            .save(filePath)
+            .on("end", async () => {
+                await varz.sendMessage(from, {
+                    audio: fs.readFileSync(filePath),
+                    mimetype: "audio/mpeg",
+                    fileName: `${title}.mp3`,
+                });
+                fs.unlinkSync(filePath);
+            })
+            .on("error", (err) => {
+                console.log(err);
+                varz.sendMessage(from, { text: "❌ Error saat convert audio!" });
+            });
 
-        // 3️⃣ Kirim hasil ke WhatsApp
-        await varz.sendMessage(from, {
-            audio: audioBuffer,
-            mimetype: "audio/mp4",
-            fileName: "youtube_audio.mp3",
-            ptt: false,
-        });
-
-        // 4️⃣ Bersihkan file sementara
-        fs.unlinkSync(tempFile);
-        fs.unlinkSync(finalFile);
     } catch (err) {
-        console.error("Error:", err);
-        await varz.sendMessage(from, { text: "❌ Gagal mendownload atau mengonversi audio." });
+        console.log(err);
+        varz.sendMessage(from, { text: "⚠ Terjadi kesalahan saat download audio." });
     }
 };
