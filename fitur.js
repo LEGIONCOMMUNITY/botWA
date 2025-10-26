@@ -213,7 +213,7 @@ module.exports = async (varz, m, body, from) => {
             }
 
             case `${bot.prefix}ytaudio`: {
-                const youtubeAudioHandler = require('./youtubeAudioHandler');
+                const youtubeAudioHandler = require('./MENU/ytAudio');
 
                 const query = args.join(' ');
                 await varz.sendMessage(from, { text: '⏳ Memproses...' });
