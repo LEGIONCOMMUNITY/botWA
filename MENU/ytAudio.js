@@ -1,48 +1,39 @@
-const ytdl = require("@distube/ytdl-core");
-const fs = require("fs");
-const ffmpeg = require("fluent-ffmpeg");
-const ffmpegPath = require("ffmpeg-static");
-ffmpeg.setFfmpegPath(ffmpegPath);
+const ytdl = require('ytdl-core');
+const ffmpeg = require('fluent-ffmpeg');
+const fs = require('fs');
 
-module.exports = async (varz, m, from, args) => {
+if (!fs.existsSync('./temp')) fs.mkdirSync('./temp');
+
+module.exports = async (varz, m, from, link) => {
     try {
-        if (!args[0]) {
-            return varz.sendMessage(from, { text: "❌ Masukkan link atau judul YouTube!\nContoh: !ytaudio https://youtube.com/xxxxx" });
+        if (!link) {
+            return varz.sendMessage(from, { text: "⚠️ Kirim link YouTube!\nContoh: .ytaudio https://youtu.be/xxxx" });
         }
 
-        const url = args[0];
+        const info = await ytdl.getInfo(link);
+        const title = info.videoDetails.title;
+        const filePath = `./temp/${Date.now()}.mp3`;
 
-        // Cek apakah link valid
-        if (!ytdl.validateURL(url)) {
-            return varz.sendMessage(from, { text: "❌ Link YouTube tidak valid!" });
-        }
+        await varz.sendMessage(from, { text: `🎵 Sedang download audio: *${title}*...` });
 
-        const info = await ytdl.getInfo(url);
-        const title = info.videoDetails.title.replace(/[^\w\s]/gi, "");
-        const filePath = `./temp/${title}.mp3`;
-
-        varz.sendMessage(from, { text: `🎵 Sedang mengunduh audio: *${title}* ... tunggu ya` });
-
-        const stream = ytdl(url, { quality: "highestaudio" });
-
-        ffmpeg(stream)
+        ffmpeg(ytdl(link, { filter: 'audioonly' }))
             .audioBitrate(128)
+            .format('mp3')
             .save(filePath)
-            .on("end", async () => {
+            .on('end', async () => {
                 await varz.sendMessage(from, {
-                    audio: fs.readFileSync(filePath),
-                    mimetype: "audio/mpeg",
-                    fileName: `${title}.mp3`,
+                    audio: { url: filePath },
+                    mimetype: 'audio/mpeg',
+                    fileName: `${title}.mp3`
                 });
-                fs.unlinkSync(filePath);
             })
-            .on("error", (err) => {
+            .on('error', (err) => {
                 console.log(err);
-                varz.sendMessage(from, { text: "❌ Error saat convert audio!" });
+                varz.sendMessage(from, { text: "❌ Gagal convert/download audio!" });
             });
 
-    } catch (err) {
-        console.log(err);
-        varz.sendMessage(from, { text: "⚠ Terjadi kesalahan saat download audio." });
+    } catch (e) {
+        console.log(e);
+        varz.sendMessage(from, { text: "⚠️ Link salah atau error dari server!" });
     }
 };

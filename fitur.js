@@ -213,7 +213,10 @@ module.exports = async (varz, m, body, from) => {
             }
 
             case `${bot.prefix}ytaudio`: {
-                await youtubeAudio(varz, m, from, args[0]);
+                const ytAudio = require('./MENU/ytAudio');
+
+                const link = args[1]
+                return ytAudio(varz, m, m.key.remoteJid, link);
                 break;
             }
 
