@@ -216,7 +216,7 @@ module.exports = async (varz, m, body, from) => {
                 const ytaHandler = require('./MENU/ytAudio');
 
                 let query = args.join(' ');
-                await ytaHandler(sock, m, from, query);
+                await ytaHandler(varz, m, from, query);
                 break;
             }
 
