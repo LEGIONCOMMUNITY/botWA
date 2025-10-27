@@ -3,7 +3,9 @@ const fs = require("fs");
 
 module.exports = async (varz, m, from, text) => {
     try {
-        if (!text) return varz.sendMessage(from, { text: "❌ Kirim link YouTube!\nContoh: .yta https://youtu.be/xxxx" });
+        if (!text) return varz.sendMessage(from, { 
+            text: "❌ Kirim link YouTube!\nContoh: .yta https://youtu.be/abcd"
+        });
 
         const { file, title, thumbnail } = await downloadYouTubeAudio(text);
 
@@ -18,7 +20,7 @@ module.exports = async (varz, m, from, text) => {
             fileName: `${title}.mp3`
         });
 
-        fs.unlinkSync(file); // hapus file setelah dikirim (biar ga menumpuk)
+        fs.unlinkSync(file);
 
     } catch (err) {
         console.error(err);
