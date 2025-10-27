@@ -213,10 +213,9 @@ module.exports = async (varz, m, body, from) => {
             }
 
             case `${bot.prefix}ytaudio`: {
-                const ytaHandler = require('./MENU/ytAudio');
+                const ytAudio = require('./MENU/ytAudio');
 
-                let query = args.join(' ');
-                await ytaHandler(varz, m, from, query);
+                await ytAudio(varz, m, from, args.join(" "));
                 break;
             }
 
