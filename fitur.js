@@ -213,11 +213,10 @@ module.exports = async (varz, m, body, from) => {
             }
 
             case `${bot.prefix}ytaudio`: {
-                const youtubeAudioHandler = require('./MENU/ytAudio');
+                const ytaHandler = require('./MENU/ytAudio');
 
-                const query = args.join(' ');
-                await varz.sendMessage(from, { text: '⏳ Memproses...' });
-                await youtubeAudioHandler(varz, m, from, query, { forceMp3: false, targetBitrate: '128k' });
+                let query = args.join(' ');
+                await ytaHandler(sock, m, from, query);
                 break;
             }
 
