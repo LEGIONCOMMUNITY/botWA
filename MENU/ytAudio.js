@@ -1,4 +1,4 @@
-const downloadYouTubeAudio = require("../lib/youtubeAudioHandler");
+const downloadYouTubeAudio = require("../lib/ytAudioHandler");
 const fs = require("fs");
 
 module.exports = async (varz, m, from, text) => {
